@@ -58,14 +58,15 @@ export function isDate(s: unknown): s is string {
  * need no special cases (rule 12.6).
  */
 export function startOfDate(date: string, tz: string): number {
-  let lo = dateToUtc(date) - 15 * HOUR; // before the date begins anywhere
-  let hi = dateToUtc(date) + 13 * HOUR; // after it has begun everywhere
-  while (hi - lo > 1000) {
+  // whole seconds: lo is always before the date begins, hi is always inside it or after
+  let lo = Math.floor((dateToUtc(date) - 15 * HOUR) / 1000);
+  let hi = Math.ceil((dateToUtc(date) + 13 * HOUR) / 1000);
+  while (hi - lo > 1) {
     const mid = Math.floor((lo + hi) / 2);
-    if (localDate(mid, tz) >= date) hi = mid;
+    if (localDate(mid * 1000, tz) >= date) hi = mid;
     else lo = mid;
   }
-  return Math.ceil(hi / 1000) * 1000;
+  return hi * 1000;
 }
 
 /** Rule 12.4: midnight at the end of the date, in the journey's time zone. */
