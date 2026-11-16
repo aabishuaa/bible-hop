@@ -1,0 +1,330 @@
+// What the server and the client say to each other.
+import type { Tier } from './rules.ts';
+
+export type Wording = 'kjv' | 'web';
+export type LossReason = 'lamp' | 'door' | 'wilderness' | 'fish' | 'famine' | 'rooster';
+export type GraceLoss = 'lamp' | 'fish' | 'famine' | 'rooster';
+export type JourneyKind = 'daily' | 'practice' | 'guide' | 'sandbox';
+export type JourneyMode = 'standard' | 'berean';
+export type JourneyStatus = 'playing' | 'won' | 'lost';
+export type RefScore = 'exact' | 'chapter' | 'book' | 'none';
+export type HowIdentified = 'reference' | 'match' | 'rival-reference' | 'confirmed' | 'chosen' | 'ai';
+
+/** open: can be chosen. used: already used in this verse. wall: found in this verse only. spent: used today (Berean Mode). */
+export type DoorState = 'open' | 'used' | 'wall' | 'spent';
+
+export interface DoorView {
+  /** The word family: "light" for light, lights, lighted, lit. */
+  key: string;
+  tier: Tier;
+  value: number;
+  /** How many verses contain it. */
+  count: number;
+  /** The forms that count, most common first (up to 6). */
+  forms: string[];
+  /** Whether the home verse contains it too. Never set for crumbs. */
+  inHome: boolean;
+  state: DoorState;
+}
+
+export interface TokenView {
+  s: string;
+  /** For a word: index into the verse's doors. */
+  d?: number;
+}
+
+export interface VerseView {
+  id: number;
+  ref: string;
+  book: number;
+  bookName: string;
+  chapter: number;
+  verse: number;
+  /** 0 at Genesis 1:1, 1 at Revelation 22:21. */
+  position: number;
+  wordings: Partial<Record<Wording, TokenView[]>>;
+  doors: DoorView[];
+}
+
+export interface VerseText {
+  id: number;
+  ref: string;
+  text: string;
+  wording: Wording;
+}
+
+/** One hop, as recorded (rule 3.11). */
+export interface HopRecord {
+  n: number;
+  from: number;
+  to: number;
+  fromRef: string;
+  toRef: string;
+  doorWord: string;
+  family: string;
+  forms: string[];
+  tier: Tier;
+  base: number;
+  refText: string;
+  refScore: RefScore;
+  multiplier: number;
+  manna: number;
+  oil: number;
+  revisit: boolean;
+  widow: number;
+  home: boolean;
+  calf: number;
+  how: HowIdentified;
+  at: number;
+}
+
+export interface MessageView {
+  code: string;
+  text: string;
+  /** good: a hop. warn: refused or asked. bad: a strike or a loss. info: neutral. */
+  tone: 'good' | 'warn' | 'bad' | 'info';
+}
+
+export type PendingView =
+  | { type: 'confirm'; how: 'match' | 'ai'; verse: VerseText; message: MessageView }
+  | { type: 'choose'; options: VerseText[]; message: MessageView }
+  | { type: 'lamp'; verse: VerseText; burn: number; have: number; message: MessageView }
+  | { type: 'grace'; losses: GraceLoss[]; loss: LossInfo; graceText: string };
+
+export interface LossInfo {
+  reason: LossReason;
+  name: string;
+  line: string;
+  cite: string;
+}
+
+export interface ChainStep {
+  verse: number;
+  ref: string;
+  position: number;
+  /** Absent for the first step (home). */
+  door?: string;
+  tier?: Tier;
+  manna?: number;
+  revisit?: boolean;
+  widow?: number;
+  home?: boolean;
+}
+
+export interface LookBackInfo {
+  available: boolean;
+  toRef: string;
+  earned: number;
+  salt: number;
+  cost: number;
+  /** Looking back now would bring Famine (manna is already below zero). */
+  famine: boolean;
+}
+
+export interface JourneyView {
+  id: string;
+  kind: JourneyKind;
+  mode: JourneyMode;
+  date: string;
+  puzzleNo: number;
+  status: JourneyStatus;
+  loss?: LossInfo;
+  version: number;
+  /** UTC milliseconds; null for practice. */
+  deadline: number | null;
+  tz: string;
+  tzLabel: string;
+  manna: number;
+  oil: number;
+  oilCap: number;
+  strikes: number;
+  strikesMax: number;
+  hops: number;
+  hopLimit: number;
+  graces: number;
+  cord: { have: number; need: number };
+  gate: number;
+  home: VerseView;
+  current: VerseView;
+  /** The tier of the door that brought the player to the current verse. */
+  arrivedBy?: Tier;
+  chain: ChainStep[];
+  pending: PendingView | null;
+  lookBack: LookBackInfo;
+  /** Berean Mode can still be switched on or off (before the first hop). */
+  canChangeMode: boolean;
+  /** Minutes left, when under the late-start warning (rule 12.8). */
+  lateMinutes?: number;
+  features: { wordingSwitch: boolean; berean: boolean; concordance: boolean };
+}
+
+export type OutcomeKind =
+  | 'hop' | 'home' | 'refuse' | 'strike' | 'gap' | 'ask' | 'confirm' | 'choose' | 'lamp'
+  | 'grace' | 'lost' | 'lookback' | 'graceUsed' | 'declined' | 'nothing' | 'stale';
+
+/** What an action did. `journey` is always the state after it. */
+export interface ActionResult {
+  kind: OutcomeKind;
+  message: MessageView | null;
+  /** Extra lines: the long-text reminder, the stuck hint, Widow's Oil. */
+  notes: MessageView[];
+  hop?: HopRecord;
+  /** Hops undone by this action (looking back, or Grace for the fish). */
+  undone?: HopRecord;
+  journey: JourneyView;
+  /** Set when the day has just ended. */
+  finale?: FinaleView;
+  /** Whether this attempt can be reported as a wrong call (rule 10.5). */
+  reportable?: number;
+}
+
+export interface NumbersView {
+  hops: number;
+  manna: number;
+  oilLeft: number;
+  oilCap: number;
+  books: number;
+  testaments: number;
+  rarest: { word: string; count: number; tier: Tier } | null;
+  exactRefs: number;
+  revisits: number;
+  looksBack: number;
+  strikes: number;
+  graceUsed: boolean;
+}
+
+/** One stop on the replay of a finished trip (rule 13.4). */
+export interface RoadStop {
+  id: number;
+  ref: string;
+  wording: Wording;
+  /** The verse as printed. m marks the word the player came in by, or left by. */
+  tokens: { s: string; m?: 'in' | 'out' }[];
+  position: number;
+  /** The hop that led here. Absent at the first stop (home). */
+  hop?: HopRecord;
+  /** When the entry (or exit) word is not in the displayed wording: which wording has it. */
+  cameByIn?: Wording;
+  leftByIn?: Wording;
+}
+
+export interface Achievement {
+  id: string;
+  name: string;
+  how: string;
+  cite?: string;
+  earnedOn?: string;
+}
+
+export interface FinaleView {
+  date: string;
+  puzzleNo: number;
+  kind: JourneyKind;
+  mode: JourneyMode;
+  won: boolean;
+  loss?: LossInfo;
+  home: VerseText;
+  homeWord?: string;
+  homeTier?: Tier;
+  calf: number;
+  manna: number;
+  treasure: number;
+  streak: number;
+  path: HopRecord[];
+  road: RoadStop[];
+  numbers: NumbersView;
+  /** The plain-text share card (rule 13.6). */
+  share: string;
+  shareTiers: Tier[];
+  looksBack: number;
+  achievements: Achievement[];
+}
+
+export interface BookSpan {
+  name: string;
+  short: string;
+  division: string;
+  testament: 'OT' | 'NT';
+  /** Start and end as shares of the Bible's verses. */
+  start: number;
+  end: number;
+}
+
+export interface PlayerView {
+  id: string;
+  guest: boolean;
+  name: string | null;
+  treasure: number;
+  streak: number;
+  bestStreak: number;
+  restDay: number; // 0 Sunday, 6 Saturday, -1 none
+  wording: Wording;
+  scribe: boolean;
+  firstTime: boolean;
+  wins: number;
+  played: number;
+}
+
+export interface DayResult {
+  date: string;
+  puzzleNo: number;
+  status: JourneyStatus | 'missed' | 'rest';
+  loss?: LossReason;
+  manna: number;
+  hops: number;
+  homeRef?: string;
+  share?: string;
+  mode?: JourneyMode;
+}
+
+export interface TodayView {
+  date: string;
+  puzzleNo: number;
+  /** null when the game has not launched yet in the player's time zone. */
+  home: VerseView | null;
+  theme: string | null;
+  deadline: number;
+  tz: string;
+  tzLabel: string;
+  serverNow: number;
+  lateMinutes: number | null;
+  journey: { status: JourneyStatus; hops: number; manna: number; mode: JourneyMode } | null;
+  yesterday: DayResult | null;
+  player: PlayerView;
+  announcements: { id: number; title: string; body: string }[];
+  notes: { id: number; text: string; at: number }[];
+  features: { berean: boolean; sundaySchool: boolean; revelation: boolean; achievements: boolean; wordingSwitch: boolean; aiCheck: boolean };
+  books: BookSpan[];
+}
+
+export interface HistoryView {
+  days: DayResult[];
+  player: PlayerView;
+  launchDate: string;
+  achievements: Achievement[];
+  allAchievements: Achievement[];
+}
+
+export interface RevelationView {
+  date: string;
+  puzzleNo: number;
+  homeRef: string;
+  players: number;
+  winRate: number;
+  best: { manna: number; share: string; route: ChainStep[] } | null;
+  firstDoor: string | null;
+  homeDoor: string | null;
+  rarestHomeDoor: { word: string; count: number } | null;
+  place: { rank: number; of: number } | null;
+}
+
+export interface ConcordanceView {
+  word: string;
+  total: number;
+  verses: VerseText[];
+}
+
+export interface ApiError {
+  error: string;
+  message: string;
+}

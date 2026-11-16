@@ -1,0 +1,48 @@
+{
+  "name": "bible-hopping",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Bible Hopping — a daily leap of faith. Hop from verse to verse through the words they share, and make it home before midnight.",
+  "type": "module",
+  "engines": {
+    "node": ">=22.13"
+  },
+  "scripts": {
+    "dev": "concurrently -k -n server,client -c yellow,cyan \"npm:dev:server\" \"npm:dev:client\"",
+    "dev:server": "tsx watch --clear-screen=false server/index.ts",
+    "dev:client": "vite",
+    "build": "vite build",
+    "start": "node scripts/start.mjs",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p client/tsconfig.json",
+    "desk:code": "tsx scripts/desk-code.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^1.8.0",
+    "@fastify/cookie": "^11.1.5",
+    "@fastify/static": "^10.1.11",
+    "@fontsource-variable/cormorant-garamond": "^5.3.0",
+    "@fontsource-variable/eb-garamond": "^5.3.0",
+    "@fontsource/poppins": "^5.3.0",
+    "@fontsource/unifrakturmaguntia": "^5.3.0",
+    "fastify": "^5.12.8",
+    "lucide-react": "^1.73.0",
+    "motion": "^14.14.0",
+    "qrcode": "^1.5.4",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "tsx": "^4.23.15",
+    "zustand": "^5.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.5",
+    "@types/qrcode": "^1.5.6",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.3.0",
+    "concurrently": "^10.0.7",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.8",
+    "vitest": "^5.1.0"
+  }
+}
