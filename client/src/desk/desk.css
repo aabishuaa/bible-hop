@@ -1,0 +1,47 @@
+/* The Scribe's Desk: plainer than the game, still on the same paper. */
+.desk { min-height: 100dvh; display: grid; grid-template-columns: 15rem 1fr; background: var(--paper-2); color: var(--ink); }
+.desk-login { display: grid; place-items: center; grid-template-columns: 1fr; padding: 1rem; }
+.desk-login form { width: 100%; max-width: 24rem; text-align: center; }
+.desk-login .enroll img { display: block; margin: 0.6rem auto; border-radius: 0.8rem; background: #fff; padding: 0.4rem; }
+.desk-login code { font-size: 0.8rem; word-break: break-all; }
+.desk-nav { background: var(--ink); color: var(--paper); padding: 1rem 0.7rem; display: flex; flex-direction: column; gap: 0.6rem; position: sticky; top: 0; height: 100dvh; overflow-y: auto; }
+.desk-brand { display: flex; gap: 0.6rem; align-items: center; padding: 0.4rem 0.6rem 0.8rem; color: #f1cf7c; }
+.desk-brand b { display: block; font-family: var(--font-display); font-size: 1.15rem; color: var(--paper); }
+.desk-brand span { font-size: 0.74rem; opacity: 0.75; color: var(--paper); }
+.desk-nav nav { display: grid; gap: 0.15rem; }
+.desk-nav nav button, .desk-foot button { all: unset; cursor: pointer; display: flex; gap: 0.55rem; align-items: center; padding: 0.5rem 0.7rem; border-radius: 0.8rem; font-size: 0.9rem; color: var(--paper); }
+.desk-nav nav button:hover, .desk-foot button:hover { background: rgba(251, 238, 214, 0.12); }
+.desk-nav nav button.on { background: var(--paper); color: var(--ink); font-weight: 600; }
+.desk-foot { margin-top: auto; display: grid; gap: 0.15rem; border-top: 1px solid rgba(251, 238, 214, 0.2); padding-top: 0.6rem; }
+.desk-main { padding: 1.5rem clamp(1rem, 3vw, 2.5rem) 3rem; min-width: 0; }
+.desk-main h1.display { font-size: 2.2rem; margin-bottom: 0.6rem; }
+.desk-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: 0.6rem; }
+.desk-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr)); gap: 0.8rem; }
+.desk-split { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 1rem; align-items: start; margin-top: 0.8rem; }
+.desk-editor { position: sticky; top: 1rem; }
+.desk-toolbar { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: flex-start; margin: 0.6rem 0; }
+.desk-table { width: 100%; border-collapse: collapse; background: var(--white); border-radius: 1rem; overflow: hidden; font-size: 0.9rem; margin-top: 0.6rem; }
+.desk-table th { text-align: left; font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3); padding: 0.55rem 0.7rem; border-bottom: 1.5px solid var(--line); }
+.desk-table td { padding: 0.5rem 0.7rem; border-bottom: 1px solid rgba(201, 163, 122, 0.4); vertical-align: top; }
+.desk-table tr.sel td { background: rgba(199, 146, 38, 0.14); }
+.desk-table tr.bad td { background: rgba(163, 39, 28, 0.08); }
+.desk-table tr.muted td { color: var(--ink-3); }
+.desk-table.compact td { padding: 0.3rem 0.5rem; }
+.row-actions button { all: unset; cursor: pointer; padding: 0.15rem 0.45rem; border-radius: 0.5rem; background: rgba(110, 67, 50, 0.1); margin-right: 0.3rem; font-size: 0.82rem; }
+.link-btn { all: unset; cursor: pointer; text-decoration: underline; color: var(--brown); font-size: inherit; }
+.big-ref { font-family: var(--font-display); font-weight: 600; font-size: 1.6rem; color: var(--brown); line-height: 1.1; }
+.check-summary { margin-top: 0.6rem; font-size: 0.9rem; display: grid; gap: 0.3rem; }
+.pill.st-live { background: rgba(28, 110, 140, 0.18); color: var(--fish); }
+.pill.st-closed { background: rgba(110, 67, 50, 0.12); color: var(--ink-2); }
+.pill.st-empty { background: rgba(163, 39, 28, 0.12); color: var(--red); }
+.pill.st-scheduled { background: rgba(199, 146, 38, 0.2); color: #7a5611; }
+.desk details > summary { list-style: none; cursor: pointer; display: inline-flex; }
+.desk details > summary::-webkit-details-marker { display: none; }
+@media (max-width: 52rem) {
+  .desk { grid-template-columns: 1fr; }
+  .desk-nav { position: static; height: auto; flex-direction: row; flex-wrap: wrap; align-items: center; }
+  .desk-nav nav { display: flex; flex-wrap: wrap; gap: 0.2rem; }
+  .desk-foot { margin-top: 0; border: 0; padding: 0; display: flex; }
+  .desk-split { grid-template-columns: 1fr; }
+  .desk-editor { position: static; }
+}

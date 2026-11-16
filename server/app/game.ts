@@ -865,7 +865,7 @@ export class Game {
   // -------------------------------------------------------------------------------------------
   // accounts (rule 18.1)
 
-  private recount(playerId: string): void {
+  recount(playerId: string): void {
     const p = this.playerById(playerId)!;
     const wins = this.db.all<{ date: string; manna: number }>("SELECT date, manna FROM journeys WHERE player_id = ? AND kind = 'daily' AND status = 'won' ORDER BY date", playerId);
     let streak = 0, best = p.best_streak, last: string | null = null;

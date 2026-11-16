@@ -8,6 +8,7 @@ import Fastify from 'fastify';
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import type { Game, PlayerRow } from './app/game.ts';
 import { GameError } from './app/game.ts';
+import { registerDesk } from './desk/routes.ts';
 import { localDate, setClock, setClockOffset } from './game/clock.ts';
 
 export interface AppOptions {
@@ -131,6 +132,9 @@ export function buildApp(game: Game, opts: AppOptions = {}): FastifyInstance {
     if (type === 'share.copied') game.track('share.copied', p.id, localDate(game.now(), 'UTC'));
     return { ok: true };
   });
+
+  // The Scribe's Desk (Part II)
+  registerDesk(app, game);
 
   if (opts.devTools) {
     app.post('/api/dev/clock', async (req) => {

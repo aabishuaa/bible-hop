@@ -1,0 +1,11 @@
+{
+  "name": "Bible Hopping",
+  "short_name": "Bible Hopping",
+  "description": "A daily leap of faith.",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#a9834f",
+  "theme_color": "#a9834f",
+  "icons": [{ "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}
