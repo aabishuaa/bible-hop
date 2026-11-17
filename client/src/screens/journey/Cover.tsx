@@ -58,7 +58,7 @@ export function Cover({ journeyId, spread, stageRef, rightRef, leftRef }: {
       const box = stageRef.current, page = rightRef.current;
       if (dead) return;
       if (!box || !page) return setDone(true);
-      const r = box.getBoundingClientRect();
+      const r = (spread ? box : page).getBoundingClientRect();
       const W = spread ? r.width / 2 : r.width, H = r.height;
       const plain = (i: number) => jpeg(leafTexture('crumb', W, H, i, true));
       const left = spread && leftRef.current ? jpeg(snapshot(leftRef.current)) : plain(4);

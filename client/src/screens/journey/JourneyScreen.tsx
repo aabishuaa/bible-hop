@@ -16,7 +16,7 @@ import { haptics } from '../../fx/haptics.ts';
 import { leafTexture } from '../../fx/paper.ts';
 import { snapshot } from '../../fx/snapshot.ts';
 import { sound } from '../../fx/sound.ts';
-import { drafts, isReducedMotion } from '../../prefs.ts';
+import { drafts, isReducedMotion, usePrefs } from '../../prefs.ts';
 import { navigate } from '../../router.ts';
 import { FLIP_FEEL, TIER_HINT, rgb, TIER_COLOR } from '../../theme.ts';
 import { PaperCanvas, Torn, press, useDocumentTitle } from '../../ui/base.tsx';
@@ -82,7 +82,9 @@ export function JourneyScreen({ initial, clockSkew, coach, onFinale, onExit }: J
   useDocumentTitle(j.current.ref);
 
   const stillPlaying = j.status === 'playing';
-  const spread = wide;
+  const pages = usePrefs((s) => s.pages);
+  const setPrefs = usePrefs((s) => s.set);
+  const spread = wide && pages === 'two';
   const hasWording = (w: Wording, v = j.current) => !!v.wordings[w];
   const shownWording: Wording = hasWording(wording) ? wording : hasWording('kjv') ? 'kjv' : 'web';
 
@@ -362,6 +364,16 @@ export function JourneyScreen({ initial, clockSkew, coach, onFinale, onExit }: J
             {j.kind === 'practice' ? 'Sunday School' : j.kind === 'guide' ? 'Your first hop' : 'Bible Hopping'}
             <small>{j.kind === 'daily' ? `#${j.puzzleNo}` : ''}</small>
           </div>
+          {wide && (
+            <div className="seg pages-seg" role="group" aria-label="Page view">
+              <button aria-pressed={!spread} aria-label="One page" title="One page" onClick={() => { press(); setPrefs({ pages: 'one' }); }}>
+                <Icon name="page1" size="1.15rem" />
+              </button>
+              <button aria-pressed={spread} aria-label="Two pages: home verse and path" title="Two pages" onClick={() => { press(); setPrefs({ pages: 'two' }); }}>
+                <Icon name="page2" size="1.15rem" />
+              </button>
+            </div>
+          )}
           {j.features.wordingSwitch && (
             <div className="seg" role="group" aria-label="Wording">
               <button aria-pressed={shownWording === 'kjv'} disabled={!hasWording('kjv')} onClick={() => onWordingSwitch('kjv')}>KJV</button>

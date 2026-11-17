@@ -13,10 +13,12 @@ export interface Prefs {
   textSize: number;
   /** Show each word's tier on the page at all times, or only when a word is tapped (rule 14.2). */
   showValues: boolean;
+  /** On a wide screen: the current page alone, or the open book with the home verse and path on the left. */
+  pages: 'one' | 'two';
 }
 
 const KEY = 'bible-hopping.prefs.v1';
-const DEFAULTS: Prefs = { sound: true, volume: 0.8, haptics: true, motion: 'auto', textSize: 1, showValues: true };
+const DEFAULTS: Prefs = { sound: true, volume: 0.8, haptics: true, motion: 'auto', textSize: 1, showValues: true, pages: 'one' };
 
 function load(): Prefs {
   try {
