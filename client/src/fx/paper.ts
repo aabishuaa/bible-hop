@@ -181,10 +181,10 @@ export function paintPage(canvas: HTMLCanvasElement, o: PageOptions): void {
 const leafCache = new Map<string, HTMLCanvasElement>();
 
 /** A printed page seen in passing: two columns of small type, washed in the color of the hop. */
-export function leafTexture(tier: FlipTier, w: number, h: number, variant = 0): HTMLCanvasElement {
+export function leafTexture(tier: FlipTier, w: number, h: number, variant = 0, plain = false): HTMLCanvasElement {
   const scale = Math.min(1, 720 / Math.max(w, h));
   const tw = Math.round(w * scale), th = Math.round(h * scale);
-  const key = `${tier}|${tw}|${th}|${variant}`;
+  const key = `${tier}|${tw}|${th}|${variant}|${plain}`;
   const hit = leafCache.get(key);
   if (hit) return hit;
   const c = document.createElement('canvas');
@@ -240,6 +240,10 @@ export function leafTexture(tier: FlipTier, w: number, h: number, variant = 0): 
     }
   }
   // the hop's color washes over the page, with its emblem pressed into the paper
+  if (plain) {
+    leafCache.set(key, c);
+    return c;
+  }
   g.save();
   g.globalCompositeOperation = 'multiply';
   g.fillStyle = color;

@@ -68,7 +68,6 @@ export function JourneyScreen({ initial, clockSkew, coach, onFinale, onExit }: J
   const [coachStep, setCoachStep] = useState(0);
   const [wash, setWash] = useState<Tier | 'home' | null>(null);
   const [entryKey, setEntryKey] = useState<string | undefined>(undefined);
-  const [ribbon, setRibbon] = useState<'rest' | 'lift' | 'fall'>('rest');
 
   const toast = useApp((s) => s.toast);
   const wide = useIsWide();
@@ -204,12 +203,11 @@ export function JourneyScreen({ initial, clockSkew, coach, onFinale, onExit }: J
         generic,
         onLeaf: (i) => sound.flip(tier, dir, 0),
       };
-      // the ribbon lifts, the old page freezes on the canvas, the real page changes underneath
-      setRibbon('lift');
+      // the old page freezes on the canvas, the real page changes underneath
       stage.hold(plan);
       setWash(tier);
       setJ(to);
-      await new Promise<void>((r) => window.setTimeout(r, 380));
+      await new Promise<void>((r) => window.setTimeout(r, 120));
       await new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())));
       plan.toRight = snapshot(page);
       if (spread && leftPage.current) plan.toLeft = snapshot(leftPage.current);
@@ -217,7 +215,6 @@ export function JourneyScreen({ initial, clockSkew, coach, onFinale, onExit }: J
       const total = feel.duration + (leaves - 1) * feel.stagger;
       window.setTimeout(() => sound.land(tier), Math.max(0, total - 120));
       await stage.play(plan);
-      setRibbon('fall');
       const box2 = page.getBoundingClientRect();
       burst(box2.left + box2.width * 0.5, box2.top + box2.height * 0.42, TIER_COLOR[tier], arrivedHome ? 34 : 16, arrivedHome);
       await new Promise<void>((r) => window.setTimeout(r, 260));
@@ -379,7 +376,6 @@ export function JourneyScreen({ initial, clockSkew, coach, onFinale, onExit }: J
       </Torn>
 
       <div className={`book ${spread ? 'spread' : ''}`} ref={bookRef}>
-        <div className={`ribbon ${ribbon} ${spread ? '' : 'edge'}`} style={{ left: spread ? '50%' : '0.3rem' }} aria-hidden="true" />
         {spread && (
           <div className="page left paper-surface" ref={leftPage}>
             <PaperCanvas spine="right" seed={5} />
@@ -462,7 +458,7 @@ export function JourneyScreen({ initial, clockSkew, coach, onFinale, onExit }: J
         </div>
       </div>
 
-      <Cover spread={spread} stageRef={bookRef} />
+      <Cover journeyId={j.id} spread={spread} stageRef={bookRef} rightRef={rightPage} leftRef={leftPage} />
       <Torn side="top" depth={14} seed={9} className="band-bottom">
         <div className="dock">
           <div className="dock-row">

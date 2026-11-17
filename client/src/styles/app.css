@@ -594,35 +594,50 @@ input[type='range'] { accent-color: var(--brown); width: 8rem; }
 @keyframes ready-glow { 0%, 100% { box-shadow: 0 4px 0 color-mix(in srgb, var(--accent) 60%, #000), 0 8px 16px color-mix(in srgb, var(--accent) 30%, transparent); } 50% { box-shadow: 0 4px 0 color-mix(in srgb, var(--accent) 60%, #000), 0 8px 26px color-mix(in srgb, var(--accent) 70%, transparent); } }
 .hop-card .btn.tier:not([disabled]) { animation: ready-glow 1.6s ease-in-out infinite; }
 
-/* the red ribbon in the middle of the Bible */
-.ribbon { position: absolute; top: -0.4rem; bottom: -2.4rem; width: 0.95rem; margin-left: -0.48rem; z-index: 41; pointer-events: none; transform-origin: top center;
-  background: linear-gradient(90deg, #6f1010, #b3231c 32%, #d13d31 50%, #b3231c 68%, #6f1010); box-shadow: 1px 0 3px rgba(60, 10, 5, 0.45), inset 0 0 5px rgba(0, 0, 0, 0.2);
-  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 0.65rem), 50% 100%, 0 calc(100% - 0.65rem)); }
-.ribbon::after { content: ''; position: absolute; inset: 0; background: repeating-linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0 2px, transparent 2px 5px); }
-@keyframes ribbon-lift { to { transform: translate(8px, -22px) rotate(-6deg) scaleX(1.1); box-shadow: 12px 18px 22px rgba(40, 10, 5, 0.45); } }
-@keyframes ribbon-fall { from { transform: translate(8px, -22px) rotate(-6deg) scaleX(1.1); box-shadow: 12px 18px 22px rgba(40, 10, 5, 0.45); } 55% { transform: translate(-2px, 4px) rotate(1.5deg); } 78% { transform: translate(1px, -2px) rotate(-0.6deg); } to { transform: none; box-shadow: 1px 0 3px rgba(60, 10, 5, 0.45); } }
-.ribbon.lift { animation: ribbon-lift 0.42s var(--ease-out) forwards; }
-.ribbon.fall { animation: ribbon-fall 0.85s ease-out forwards; }
-[data-motion='reduced'] .ribbon { animation: none !important; }
-.ribbon.edge { width: 0.55rem; margin-left: 0; bottom: -1rem; }
 
-/* the closed Bible */
-.cover-wrap { z-index: 42; overflow: visible; perspective: 1600px; perspective-origin: 0% 50%; pointer-events: none; }
-.cover-back { position: absolute; inset: 0 50% 0 0; background: linear-gradient(90deg, #2f1a10, #4a2a1a 60%, #3a2114); transition: opacity 0.6s ease 0.6s; }
-.cover { position: absolute; inset: 0; transform-origin: left center; transform-style: preserve-3d; transform: rotateY(0deg); transition: transform 1.35s cubic-bezier(0.55, 0.05, 0.25, 1); }
-.cover-wrap.spread .cover { inset: 0 0 0 50%; }
-.cover-face, .cover-inside { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; }
-.cover-face { background: radial-gradient(120% 90% at 30% 20%, #6a3b26, #3d2114 70%, #2a150c); box-shadow: inset 0 0 0 1px rgba(255, 220, 150, 0.08), 8px 0 18px rgba(20, 8, 2, 0.5); border-radius: 0 0.5rem 0.5rem 0; display: grid; place-items: center; }
-.cover-face::before { content: ''; position: absolute; inset: 0; background-image: var(--kraft-tile); background-size: 220px; mix-blend-mode: multiply; opacity: 0.6; border-radius: inherit; }
-.cover-frame { position: absolute; inset: 1.1rem; border: 2px solid rgba(214, 170, 80, 0.75); border-radius: 0.25rem; box-shadow: inset 0 0 0 5px transparent, inset 0 0 0 7px rgba(214, 170, 80, 0.35); }
-.cover-cross { position: relative; width: 22%; aspect-ratio: 2 / 3; }
-.cover-cross::before, .cover-cross::after { content: ''; position: absolute; background: linear-gradient(90deg, #a87b22, #f0cf78 45%, #c89a32); box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 240, 200, 0.7); border-radius: 2px; }
-.cover-cross::before { left: 40%; top: 0; width: 20%; height: 100%; }
-.cover-cross::after { left: 0; top: 24%; width: 100%; height: 14%; }
-.cover-title { position: absolute; bottom: 14%; font-family: var(--font-display); font-weight: 600; font-size: clamp(1.3rem, 4.5vw, 2rem); letter-spacing: 0.28em; text-transform: uppercase; color: #e8c46a; text-shadow: 0 1px 0 rgba(255, 240, 200, 0.4), 0 2px 4px rgba(0, 0, 0, 0.6); }
-.cover-inside { transform: rotateY(180deg); background: linear-gradient(90deg, #f3e3c2, #e8d3ad); }
-.cover-wrap.opening .cover { transform: rotateY(-165deg); }
-.cover-wrap.opening .cover-back { opacity: 0; }
-.cover-wrap.opening { animation: cover-fade 0.3s ease 1.1s forwards; }
-@keyframes cover-fade { to { opacity: 0; } }
-[data-motion='reduced'] .cover-wrap { display: none; }
+
+/* ---------------------------------------------------------------- the 3D Bible */
+
+.b3d-overlay { position: fixed; inset: 0; z-index: 42; cursor: pointer;
+  background-color: var(--kraft);
+  background-image: radial-gradient(ellipse 70% 55% at 50% 50%, rgba(255, 236, 190, 0.3), transparent 70%), radial-gradient(ellipse at 50% 50%, transparent 40%, rgba(35, 18, 4, 0.62) 100%), var(--kraft-tile);
+  background-size: auto, auto, 320px 320px; }
+.b3d-stage { position: absolute; inset: 0; perspective: 1500px; perspective-origin: 50% 42%; opacity: 0; }
+.b3d { position: absolute; width: 0; transform-style: preserve-3d; }
+.b3d-g { position: absolute; left: 0; top: 0; width: 0; height: 0; transform-style: preserve-3d; }
+.b3d-f { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
+.b3d-page { background-color: #fbeed6; backface-visibility: hidden; -webkit-backface-visibility: hidden; overflow: hidden; }
+.b3d-gutter { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(90, 55, 20, 0.42), rgba(90, 55, 20, 0.1) 8%, transparent 20%); }
+.b3d-gutter.right { background: linear-gradient(270deg, rgba(90, 55, 20, 0.42), rgba(90, 55, 20, 0.1) 8%, transparent 20%); }
+.b3d-leather { backface-visibility: hidden; -webkit-backface-visibility: hidden; display: grid; place-items: center; border-radius: 0 6px 6px 0; overflow: hidden;
+  background: radial-gradient(120% 90% at 30% 20%, #74412a, #3d2114 68%, #26130a); box-shadow: inset 0 0 0 1px rgba(255, 220, 150, 0.08), inset -6px 0 10px rgba(0, 0, 0, 0.35), inset 6px 0 8px rgba(255, 220, 160, 0.06); }
+.b3d-leather::before { content: ''; position: absolute; inset: 0; background-image: var(--kraft-tile); background-size: 200px; mix-blend-mode: multiply; opacity: 0.55; }
+.b3d-board-in { backface-visibility: hidden; -webkit-backface-visibility: hidden; background: #4a2818; border-radius: 0 6px 6px 0; }
+.b3d-board-in::after { content: ''; position: absolute; inset: 5px 5px 5px 0; background: linear-gradient(135deg, #8d2c23, #5c1610); box-shadow: inset 0 0 12px rgba(0, 0, 0, 0.4); }
+.b3d-board-edge { background: linear-gradient(#603522, #2c160c); }
+.b3d-edge-v { background: linear-gradient(rgba(214, 166, 70, 0.6), rgba(184, 132, 44, 0.6)), repeating-linear-gradient(90deg, #fff6e2 0 1px, #d6bd8c 1px 2px); }
+.b3d-edge-h { background: linear-gradient(rgba(214, 166, 70, 0.6), rgba(184, 132, 44, 0.6)), repeating-linear-gradient(180deg, #fff6e2 0 1px, #d6bd8c 1px 2px); }
+.b3d-spine { display: flex; flex-direction: column; justify-content: space-evenly; align-items: stretch; background: linear-gradient(90deg, #2a140b, #5c321f 28%, #74412a 50%, #5c321f 72%, #2a140b); }
+.b3d-spine i { display: block; height: 3px; margin: 0 8%; border-radius: 2px; background: linear-gradient(90deg, #a87b22, #f0cf78, #a87b22); box-shadow: 0 1px 1px rgba(0, 0, 0, 0.5); }
+.b3d-shadow { background: radial-gradient(closest-side, rgba(28, 12, 2, 0.58), rgba(28, 12, 2, 0)); }
+.b3d-frame { position: absolute; border: 2px solid rgba(214, 170, 80, 0.75); border-radius: 3px; box-shadow: inset 0 0 0 4px transparent, inset 0 0 0 6px rgba(214, 170, 80, 0.3); }
+.b3d-cross { position: relative; aspect-ratio: 2 / 3; margin-top: -8%; filter: drop-shadow(0 3px 3px rgba(0, 0, 0, 0.55)); }
+.b3d-cross::before, .b3d-cross::after { content: ''; position: absolute; border-radius: 2px; background: linear-gradient(90deg, #9b6f1c, #f3d585 45%, #c3952e); box-shadow: inset 0 1px 0 rgba(255, 242, 205, 0.75), inset 0 -1px 0 rgba(90, 60, 10, 0.5); }
+.b3d-cross::before { left: 40%; top: 0; width: 20%; height: 100%; }
+.b3d-cross::after { left: 0; top: 24%; width: 100%; height: 14%; }
+.b3d-title { position: absolute; left: 0; right: 0; text-align: center; font-family: var(--font-display); font-weight: 600; letter-spacing: 0.26em; text-transform: uppercase; color: #e8c46a; text-shadow: 0 1px 0 rgba(255, 240, 200, 0.35), 0 2px 3px rgba(0, 0, 0, 0.6); white-space: nowrap; }
+
+.mini-bible { all: unset; cursor: pointer; display: block; position: relative; width: 160px; height: 150px; margin: 0 auto -0.4rem; perspective: 700px; -webkit-tap-highlight-color: transparent; }
+.mini-bible::after { content: ''; position: absolute; left: 30px; right: 30px; bottom: 2px; height: 16px; border-radius: 50%; background: radial-gradient(closest-side, rgba(60, 30, 8, 0.38), transparent); animation: mini-shadow 4.5s ease-in-out infinite; }
+.mini-bible .b3d-shadow { display: none; }
+.mini-bible .floating { animation: b3d-float 4.5s ease-in-out infinite; }
+.mini-bible:active .floating { animation-play-state: paused; }
+@keyframes b3d-float { 0%, 100% { transform: translateY(0) rotateX(-14deg) rotateY(32deg) rotateZ(-3deg); } 50% { transform: translateY(-9px) rotateX(-9deg) rotateY(40deg) rotateZ(-1deg); } }
+@keyframes mini-shadow { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(0.82); opacity: 0.7; } }
+[data-motion='reduced'] .mini-bible .floating { animation: none; transform: rotateX(-12deg) rotateY(34deg); }
+.today-hero { margin-top: clamp(0.4rem, 3vh, 2.2rem) !important; }
+
+/* depth on the page: aged edges, and light falling across the paper */
+.page::after { content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 3; box-shadow: inset 0 0 70px rgba(110, 70, 25, 0.2), inset 0 10px 18px -10px rgba(60, 35, 10, 0.35), inset 0 -10px 18px -10px rgba(60, 35, 10, 0.3); }
+.chip, .lookback-btn { box-shadow: inset 0 1px 0 rgba(255, 250, 240, 0.16), 0 1px 3px rgba(40, 20, 4, 0.3); }
+.home-card { box-shadow: 0 1px 0 #fff inset, 0 2px 0 var(--paper-3), 0 4px 0 #e2c99b, 0 5px 0 var(--paper-3), 0 18px 34px rgba(66, 40, 12, 0.22) !important; }

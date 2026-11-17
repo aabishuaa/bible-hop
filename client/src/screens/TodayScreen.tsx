@@ -8,6 +8,7 @@ import { useApp } from '../app-store.ts';
 import { sound } from '../fx/sound.ts';
 import { navigate } from '../router.ts';
 import { DotsDeco, Ornament, Sparkle, TornCorner, niceDate, press, timeLeft, useDocumentTitle } from '../ui/base.tsx';
+import { Book3D } from '../ui/Book3D.tsx';
 import { Icon, TierBadge } from '../ui/icons.tsx';
 import { useNow } from './journey/parts.tsx';
 
@@ -58,6 +59,9 @@ export function TodayScreen({ today, clockSkew }: { today: TodayView; clockSkew:
         </div>
 
         <div className="today-hero">
+          <button className="mini-bible" onClick={() => { press(); navigate(today.journey && today.journey.status !== 'playing' ? `/finale/${today.date}` : '/play'); }} aria-label={started ? 'Continue your journey' : "Open today\u2019s Bible"}>
+            <Book3D dims={{ W: 84, H: 114, D: 9, B: 3, ov: 3 }} style={{ left: 38, top: 18, transformOrigin: '42px 57px 9px' }} className="floating" />
+          </button>
           <p className="eyebrow">A daily leap of faith</p>
           <h1 className="display">
             <span>Bible</span>
