@@ -11,15 +11,14 @@ const CATALOG: Record<string, { tone: Tone; text: (p: P) => string }> = {
   'hop.ok': {
     tone: 'good',
     text: (p) => {
-      const as = p.form && String(p.form).toLowerCase() !== String(p.word).toLowerCase() ? ` (as “${p.form}”)` : '';
-      let s = `Hopped to ${p.ref} through “${p.word}”${as}: +${p.n} manna`;
-      if (p.bonus === 'exact') s += ', doubled for the exact reference';
-      else if (p.bonus === 'chapter') s += ', with a bonus for the right chapter';
-      else if (p.bonus === 'book') s += ', with a bonus for the right book';
-      s += '.';
-      if (p.revisit) s += ` A return visit burns ${p.oil} oil.`;
-      if (p.widow) s += ` This verse mentions oil, so your lamp gains ${plural(Number(p.widow), 'drop')}.`;
-      return s;
+      const as = p.form && String(p.form).toLowerCase() !== String(p.word).toLowerCase() ? ` (as \u201c${p.form}\u201d)` : '';
+      const parts = [`${p.ref} through \u201c${p.word}\u201d${as}`, `+${p.n} manna`];
+      if (p.bonus === 'exact') parts.push('exact reference \u00d72');
+      else if (p.bonus === 'chapter') parts.push('right chapter \u00d71.5');
+      else if (p.bonus === 'book') parts.push('right book \u00d71.25');
+      if (p.revisit) parts.push(`return visit, ${p.oil} oil`);
+      if (p.widow) parts.push(`+${p.widow} oil from this verse`);
+      return parts.join(' \u00b7 ');
     },
   },
   'hop.home': { tone: 'good', text: (p) => `Home through “${p.word}”. The homecoming feast adds ${p.n} manna.` },

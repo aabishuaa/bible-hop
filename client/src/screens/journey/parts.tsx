@@ -109,6 +109,10 @@ export function homeReadiness(j: JourneyView): { ready: boolean; verses: number;
 
 export function Hud({ j, clockSkew, onOpen }: { j: JourneyView; clockSkew: number; onOpen: () => void }) {
   const manna = useCountTo(j.manna);
+  const [bump, setBump] = useState(0);
+  useEffect(() => {
+    setBump((b) => b + 1);
+  }, [j.manna]);
   const now = useNow(1000) + clockSkew;
   const prevOil = useRef(j.oil);
   const [burning, setBurning] = useState<number[]>([]);
@@ -133,7 +137,7 @@ export function Hud({ j, clockSkew, onOpen }: { j: JourneyView; clockSkew: numbe
   return (
     <>
       <div className="hud">
-        <button className={`hud-manna ${j.manna < 0 ? 'debt' : ''}`} onClick={onOpen} aria-label={`${j.manna} manna${j.manna < 0 ? ', in debt' : ''}. Open the journey status.`}>
+        <button key={bump} className={`hud-manna ${j.manna < 0 ? 'debt' : ''} ${bump > 1 ? 'bump' : ''}`} onClick={onOpen} aria-label={`${j.manna} manna${j.manna < 0 ? ', in debt' : ''}. Open the journey status.`}>
           <TierBadge tier="home" size={32} className="manna-badge" />
           <span>
             <span className="tabular">{manna}</span>

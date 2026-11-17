@@ -197,6 +197,14 @@ class SoundEngine {
 
   // ---------------------------------------------------------------------------- the game's sounds
 
+  /** The cover of the Bible lifting open: a leather creak and a breath of pages. */
+  cover(): void {
+    this.noise({ dur: 0.5, gain: 0.1, freq: 320, to: 1400, q: 2.2, attack: 0.2, wet: 0.4 });
+    this.tone({ freq: 70, to: 48, dur: 0.35, gain: 0.22, at: 0.05 });
+    this.noise({ at: 0.75, dur: 0.35, gain: 0.12, freq: 1800, to: 700, q: 0.7, highpass: 400, wet: 0.3 });
+    this.tone({ at: 1.05, freq: 150, to: 60, dur: 0.18, gain: 0.2 });
+  }
+
   click(): void {
     this.noise({ dur: 0.02, gain: 0.05, freq: 3200, q: 1.2 });
     this.tone({ freq: 1500, dur: 0.03, gain: 0.03 });

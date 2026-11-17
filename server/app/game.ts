@@ -133,9 +133,9 @@ export class Game {
       this.db.run('INSERT INTO lexicons (version, config, effective_from, created_at, created_by, note) VALUES (1, ?, ?, ?, ?, ?)', JSON.stringify(defaultLexiconConfig()), '0001-01-01', at, 'system', 'Appendix B and Appendix C');
     }
     if (!this.db.meta('launchDate')) {
-      // Puzzle #1 is today where the server runs, unless LAUNCH_DATE names another day.
-      const serverTz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
-      this.db.setMeta('launchDate', isDate(launchDate) ? launchDate : localDate(at, serverTz));
+      // Puzzle #1 is the earliest date still current anywhere on Earth, so every player has a
+      // puzzle on day one wherever they are, unless LAUNCH_DATE names another day.
+      this.db.setMeta('launchDate', isDate(launchDate) ? launchDate : oldestOpenDate(at));
     }
     if (!this.db.meta('settings')) this.db.setMeta('settings', { defaultWording: 'kjv', display: ['kjv', 'web'] });
     if (!this.db.meta('ai')) this.db.setMeta('ai', DEFAULT_AI);

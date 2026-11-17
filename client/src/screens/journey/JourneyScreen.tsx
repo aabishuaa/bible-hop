@@ -8,13 +8,15 @@ import { TIER_NAMES } from '../../../../shared/rules.ts';
 import type { ActionResult, DoorView, FinaleView, JourneyView, MessageView, Wording } from '../../../../shared/types.ts';
 import { ApiError, api } from '../../api.ts';
 import { useApp } from '../../app-store.ts';
+import { burst } from '../../fx/burst.ts';
 import { flipStage } from '../../fx/flip.ts';
+import { Cover } from './Cover.tsx';
 import type { FlipPlan } from '../../fx/flip.ts';
 import { haptics } from '../../fx/haptics.ts';
 import { leafTexture } from '../../fx/paper.ts';
 import { snapshot } from '../../fx/snapshot.ts';
 import { sound } from '../../fx/sound.ts';
-import { drafts, isReducedMotion, usePrefs } from '../../prefs.ts';
+import { drafts, isReducedMotion } from '../../prefs.ts';
 import { navigate } from '../../router.ts';
 import { FLIP_FEEL, TIER_HINT, rgb, TIER_COLOR } from '../../theme.ts';
 import { PaperCanvas, Torn, press, useDocumentTitle } from '../../ui/base.tsx';
@@ -66,12 +68,13 @@ export function JourneyScreen({ initial, clockSkew, coach, onFinale, onExit }: J
   const [coachStep, setCoachStep] = useState(0);
   const [wash, setWash] = useState<Tier | 'home' | null>(null);
   const [entryKey, setEntryKey] = useState<string | undefined>(undefined);
+  const [ribbon, setRibbon] = useState<'rest' | 'lift' | 'fall'>('rest');
 
   const toast = useApp((s) => s.toast);
-  const showValues = usePrefs((s) => s.showValues);
   const wide = useIsWide();
   const kb = useKeyboardInset();
   const rightPage = useRef<HTMLDivElement>(null);
+  const bookRef = useRef<HTMLDivElement>(null);
   const leftPage = useRef<HTMLDivElement>(null);
   const verseBox = useRef<HTMLTextAreaElement>(null);
   const prevOil = useRef(j.oil);
@@ -170,6 +173,10 @@ export function JourneyScreen({ initial, clockSkew, coach, onFinale, onExit }: J
         setJ(to);
         sound.flip(tier, 1);
         sound.land(tier, 0.2);
+        if (page) {
+          const b = page.getBoundingClientRect();
+          burst(b.left + b.width * 0.5, b.top + b.height * 0.42, TIER_COLOR[tier], arrivedHome ? 34 : 16, arrivedHome);
+        }
         return;
       }
       const box = page.getBoundingClientRect();
@@ -197,10 +204,12 @@ export function JourneyScreen({ initial, clockSkew, coach, onFinale, onExit }: J
         generic,
         onLeaf: (i) => sound.flip(tier, dir, 0),
       };
-      // freeze the old page on the canvas, swap the real page underneath, then grab it as the landing page
+      // the ribbon lifts, the old page freezes on the canvas, the real page changes underneath
+      setRibbon('lift');
       stage.hold(plan);
       setWash(tier);
       setJ(to);
+      await new Promise<void>((r) => window.setTimeout(r, 380));
       await new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())));
       plan.toRight = snapshot(page);
       if (spread && leftPage.current) plan.toLeft = snapshot(leftPage.current);
@@ -208,6 +217,10 @@ export function JourneyScreen({ initial, clockSkew, coach, onFinale, onExit }: J
       const total = feel.duration + (leaves - 1) * feel.stagger;
       window.setTimeout(() => sound.land(tier), Math.max(0, total - 120));
       await stage.play(plan);
+      setRibbon('fall');
+      const box2 = page.getBoundingClientRect();
+      burst(box2.left + box2.width * 0.5, box2.top + box2.height * 0.42, TIER_COLOR[tier], arrivedHome ? 34 : 16, arrivedHome);
+      await new Promise<void>((r) => window.setTimeout(r, 260));
       setWash(null);
     },
     [spread],
@@ -365,7 +378,8 @@ export function JourneyScreen({ initial, clockSkew, coach, onFinale, onExit }: J
         <Hud j={j} clockSkew={clockSkew} onOpen={() => { press(); setStatus(true); }} />
       </Torn>
 
-      <div className={`book ${spread ? 'spread' : ''}`}>
+      <div className={`book ${spread ? 'spread' : ''}`} ref={bookRef}>
+        <div className={`ribbon ${ribbon} ${spread ? '' : 'edge'}`} style={{ left: spread ? '50%' : '0.3rem' }} aria-hidden="true" />
         {spread && (
           <div className="page left paper-surface" ref={leftPage}>
             <PaperCanvas spine="right" seed={5} />
@@ -401,7 +415,7 @@ export function JourneyScreen({ initial, clockSkew, coach, onFinale, onExit }: J
             )}
             <div className="running-head" data-snap>
               <div className="ref">
-                <small>{j.current.id === j.home.id ? (j.status === 'won' ? 'Home again' : 'Standing at home') : arrived ? `Came in through a ${TIER_NAMES[arrived]}` : 'Standing on'}</small>
+                <small>{j.current.id === j.home.id ? (j.status === 'won' ? 'Home again' : 'Home') : arrived ? `By a ${TIER_NAMES[arrived]}` : ''}</small>
                 {j.current.ref}
               </div>
               <div className="rule" />
@@ -441,20 +455,14 @@ export function JourneyScreen({ initial, clockSkew, coach, onFinale, onExit }: J
             {!door && !message && stillPlaying && !j.pending && (
               <p className="empty-hint">
                 <Icon name="hop" className="nudge" size="1.2rem" strokeWidth={2.2} />
-                {j.current.id === j.home.id && j.hops === 0 ? 'Tap any word to leave home through it.' : readiness.ready ? 'Tap a word, or head home through a word your home verse shares.' : 'Tap a word to choose your next door.'}
+                {readiness.ready ? 'Tap a word your home verse shares to head home.' : 'Tap a word to hop.'}
               </p>
-            )}
-            {showValues && door === null && stillPlaying && (
-              <div className="page-foot small muted" aria-hidden="true">
-                <span>
-                  <Legend />
-                </span>
-              </div>
             )}
           </div>
         </div>
       </div>
 
+      <Cover spread={spread} stageRef={bookRef} />
       <Torn side="top" depth={14} seed={9} className="band-bottom">
         <div className="dock">
           <div className="dock-row">
@@ -492,8 +500,8 @@ export function JourneyScreen({ initial, clockSkew, coach, onFinale, onExit }: J
                 </button>
               </div>
               <div className="forms">
-                {door.forms.length > 1 ? <>Counts as&nbsp;</> : <>Only this form appears:&nbsp;</>}
-                {door.forms.map((f) => <span key={f}>{pretty(f)}</span>)}
+                {door.forms.length > 1 ? <>Also&nbsp;</> : <>Only&nbsp;</>}
+                {door.forms.filter((f) => f !== doorWord.toLowerCase()).slice(0, 5).map((f) => <span key={f}>{pretty(f)}</span>)}
                 {door.tier === 'crumb' && <em style={{ marginLeft: 'auto' }}>{TIER_HINT.crumb}</em>}
               </div>
               {message && (
@@ -564,10 +572,10 @@ export function JourneyScreen({ initial, clockSkew, coach, onFinale, onExit }: J
                 </div>
                 {bonus && door.tier !== 'crumb' && (
                   <div className="bonus-hint">
-                    <span>Bonus with the reference: </span>
+                    <span>With the reference:</span>
                     <span>book <b>{bonus.book}</b></span>
                     <span>chapter <b>{bonus.chapter}</b></span>
-                    <span>exact <b>{bonus.exact}</b></span>
+                    <span>verse <b>{bonus.exact}</b></span>
                     {j.features.concordance && (
                       <button className="link" style={{ all: 'unset', cursor: 'pointer', marginLeft: 'auto', color: 'var(--accent)', fontWeight: 600, textDecoration: 'underline' }} onClick={() => { press(); setConcordance(true); }}>
                         Concordance
@@ -661,20 +669,5 @@ export function JourneyScreen({ initial, clockSkew, coach, onFinale, onExit }: J
         />
       )}
     </div>
-  );
-}
-
-function Legend() {
-  return (
-    <span className="legend" style={{ fontSize: '0.74rem' }}>
-      {(['crumb', 'loaf', 'fish', 'pearl'] as Tier[]).map((t) => (
-        <span key={t}>
-          <TierBadge tier={t} size={16} /> {TIER_NAMES[t]}
-        </span>
-      ))}
-      <span>
-        <Icon name="home" size="0.8rem" style={{ color: 'var(--gold)' }} strokeWidth={2.6} /> also at home
-      </span>
-    </span>
   );
 }
