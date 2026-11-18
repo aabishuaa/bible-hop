@@ -140,7 +140,7 @@ export function Hud({ j, clockSkew, onOpen }: { j: JourneyView; clockSkew: numbe
         <button key={bump} className={`hud-manna ${j.manna < 0 ? 'debt' : ''} ${bump > 1 ? 'bump' : ''}`} onClick={onOpen} aria-label={`${j.manna} manna${j.manna < 0 ? ', in debt' : ''}. Open the journey status.`}>
           <TierBadge tier="home" size={32} className="manna-badge" />
           <span>
-            <span className="tabular">{manna}</span>
+            <span className="tabular manna-num">{manna}</span>
             <small>{j.manna < 0 ? 'in debt' : 'manna'}</small>
           </span>
         </button>

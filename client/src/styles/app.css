@@ -590,7 +590,7 @@ input[type='range'] { accent-color: var(--brown); width: 8rem; }
 .w.chosen { animation: pop 0.38s var(--spring) both; }
 .w.open:active { transform: scale(0.94); }
 @keyframes bump { 0% { transform: scale(1); } 40% { transform: scale(1.22); } 100% { transform: scale(1); } }
-.hud-manna.bump > span { display: inline-block; animation: bump 0.5s var(--spring); transform-origin: left center; }
+.hud-manna.bump .manna-num { display: inline-block; animation: bump 0.5s var(--spring); transform-origin: left center; }
 @keyframes ready-glow { 0%, 100% { box-shadow: 0 4px 0 color-mix(in srgb, var(--accent) 60%, #000), 0 8px 16px color-mix(in srgb, var(--accent) 30%, transparent); } 50% { box-shadow: 0 4px 0 color-mix(in srgb, var(--accent) 60%, #000), 0 8px 26px color-mix(in srgb, var(--accent) 70%, transparent); } }
 .hop-card .btn.tier:not([disabled]) { animation: ready-glow 1.6s ease-in-out infinite; }
 
@@ -649,3 +649,6 @@ input[type='range'] { accent-color: var(--brown); width: 8rem; }
   .book:not(.spread) { justify-items: center; padding: 0 1rem; }
   .book:not(.spread) .page.right { width: min(100%, 52rem); box-shadow: 0 14px 34px rgba(40, 20, 4, 0.38), 0 2px 6px rgba(40, 20, 4, 0.25); }
 }
+
+/* the page makes room for the hop slip, so the slip never covers the verse */
+.page-scroll { transition: padding-bottom 0.25s var(--ease-out); }

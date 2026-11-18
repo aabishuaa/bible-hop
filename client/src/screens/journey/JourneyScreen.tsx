@@ -73,6 +73,9 @@ export function JourneyScreen({ initial, clockSkew, coach, onFinale, onExit }: J
   const wide = useIsWide();
   const kb = useKeyboardInset();
   const rightPage = useRef<HTMLDivElement>(null);
+  const rightScroll = useRef<HTMLDivElement>(null);
+  const sheetRef = useRef<HTMLDivElement>(null);
+  const [room, setRoom] = useState(0);
   const bookRef = useRef<HTMLDivElement>(null);
   const leftPage = useRef<HTMLDivElement>(null);
   const verseBox = useRef<HTMLTextAreaElement>(null);
@@ -126,6 +129,51 @@ export function JourneyScreen({ initial, clockSkew, coach, onFinale, onExit }: J
     setReference('');
     drafts.clear(j.id, j.current.id);
   }, [j.id, j.current.id]);
+
+  // The hop slip sits over the bottom of the page. Give the page that much room at the bottom, so the
+  // verse (centred in what is left) is never under the slip, and scroll the verse into view if needed.
+  const slipOpen = !!door && stillPlaying && !j.pending;
+  useEffect(() => {
+    if (!slipOpen) {
+      setRoom(0);
+      return;
+    }
+    let frame = 0;
+    const measure = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        const scroller = rightScroll.current, sheet = sheetRef.current;
+        if (!scroller || !sheet) return;
+        // the slip's resting place: fixed to the bottom, just above the on-screen keyboard
+        const sheetTop = window.innerHeight - kb - sheet.offsetHeight;
+        const box = scroller.getBoundingClientRect();
+        const overlap = Math.max(0, Math.round(box.bottom - sheetTop));
+        setRoom(overlap ? overlap + 18 : 0);
+        // after the padding lands, bring the verse into the visible part
+        window.setTimeout(() => {
+          const verse = scroller.querySelector<HTMLElement>('.verse');
+          if (!verse) return;
+          const visibleBottom = Math.min(box.bottom, sheetTop) - 12;
+          const v = verse.getBoundingClientRect();
+          const chosen = scroller.querySelector<HTMLElement>('.w.chosen')?.getBoundingClientRect();
+          // keep the chosen word, or the end of the verse, above the slip
+          const target = chosen && v.bottom > visibleBottom ? chosen.bottom : v.bottom;
+          if (target > visibleBottom) scroller.scrollBy({ top: target - visibleBottom, behavior: 'smooth' });
+          else if (v.top < box.top) scroller.scrollBy({ top: v.top - box.top - 12, behavior: 'smooth' });
+        }, 280);
+      });
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    if (sheetRef.current) ro.observe(sheetRef.current);
+    if (rightScroll.current) ro.observe(rightScroll.current);
+    window.addEventListener('resize', measure);
+    return () => {
+      cancelAnimationFrame(frame);
+      ro.disconnect();
+      window.removeEventListener('resize', measure);
+    };
+  }, [slipOpen, kb, door?.key, message, notes.length]);
 
   // ------------------------------------------------------------------ choosing a door (rule 3.2)
   const tapWord = (d: DoorView, word: string, el: HTMLElement) => {
@@ -409,7 +457,7 @@ export function JourneyScreen({ initial, clockSkew, coach, onFinale, onExit }: J
         <div className="page right paper-surface" ref={rightPage}>
           <PaperCanvas spine={spread ? 'left' : 'none'} seed={3} />
           <div className="page-edges right" aria-hidden="true" style={{ transform: `scaleX(${0.3 + 0.7 * (1 - j.current.position)})` }} />
-          <div className="page-scroll">
+          <div className="page-scroll" ref={rightScroll} style={room ? { paddingBottom: room } : undefined}>
             {!spread && (
               <button className={`home-strip ${homeOpen ? 'open' : ''}`} onClick={() => { press(); setHomeOpen((o) => !o); }} aria-expanded={homeOpen} aria-label={`Home verse, ${j.home.ref}. ${homeOpen ? 'Collapse' : 'Expand'}.`}>
                 <span className="label" data-snap>
@@ -488,7 +536,7 @@ export function JourneyScreen({ initial, clockSkew, coach, onFinale, onExit }: J
       <AnimatePresence>
         {door && stillPlaying && !j.pending && (
           <motion.div className="hop-sheet" style={{ bottom: kb }} initial={{ y: '110%' }} animate={{ y: 0 }} exit={{ y: '110%' }} transition={{ type: 'spring', stiffness: 460, damping: 38 }}>
-            <div className={`hop-card tier-${door.tier}`} role="region" aria-label={`Hop through ${doorWord}`}>
+            <div ref={sheetRef} className={`hop-card tier-${door.tier}`} role="region" aria-label={`Hop through ${doorWord}`}>
               <div className="grab" />
               <div className="hop-head">
                 <TierBadge tier={door.tier} size={44} />
@@ -507,11 +555,13 @@ export function JourneyScreen({ initial, clockSkew, coach, onFinale, onExit }: J
                   <Icon name="strike" size="1.2rem" strokeWidth={2.2} />
                 </button>
               </div>
-              <div className="forms">
-                {door.forms.length > 1 ? <>Also&nbsp;</> : <>Only&nbsp;</>}
-                {door.forms.filter((f) => f !== doorWord.toLowerCase()).slice(0, 5).map((f) => <span key={f}>{pretty(f)}</span>)}
-                {door.tier === 'crumb' && <em style={{ marginLeft: 'auto' }}>{TIER_HINT.crumb}</em>}
-              </div>
+              {(door.forms.some((f) => f !== doorWord.toLowerCase()) || door.tier === 'crumb') && (
+                <div className="forms">
+                  {door.forms.some((f) => f !== doorWord.toLowerCase()) && <>Also&nbsp;</>}
+                  {door.forms.filter((f) => f !== doorWord.toLowerCase()).slice(0, 5).map((f) => <span key={f}>{pretty(f)}</span>)}
+                  {door.tier === 'crumb' && <em style={{ marginLeft: 'auto' }}>{TIER_HINT.crumb}</em>}
+                </div>
+              )}
               {message && (
                 <div className={`msg-line ${message.tone}`} style={{ marginTop: 0, marginBottom: '0.6rem' }} role={message.tone === 'bad' ? 'alert' : 'status'}>
                   <Icon name={message.tone === 'good' ? 'hop' : message.tone === 'bad' ? 'rooster' : 'book'} />
