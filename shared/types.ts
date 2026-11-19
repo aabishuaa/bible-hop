@@ -8,7 +8,7 @@ export type JourneyKind = 'daily' | 'practice' | 'guide' | 'sandbox';
 export type JourneyMode = 'standard' | 'berean';
 export type JourneyStatus = 'playing' | 'won' | 'lost';
 export type RefScore = 'exact' | 'chapter' | 'book' | 'none';
-export type HowIdentified = 'reference' | 'match' | 'rival-reference' | 'confirmed' | 'chosen' | 'ai';
+export type HowIdentified = 'reference' | 'match' | 'rival-reference' | 'confirmed' | 'chosen' | 'ai' | 'golden';
 
 /** open: can be chosen. used: already used in this verse. wall: found in this verse only. spent: used today (Berean Mode). */
 export type DoorState = 'open' | 'used' | 'wall' | 'spent';
@@ -151,6 +151,8 @@ export interface JourneyView {
   chain: ChainStep[];
   pending: PendingView | null;
   lookBack: LookBackInfo;
+  /** A Golden Nugget brought the player here: one tap takes them home. */
+  goldenRoad: boolean;
   /** Berean Mode can still be switched on or off (before the first hop). */
   canChangeMode: boolean;
   /** Minutes left, when under the late-start warning (rule 12.8). */
@@ -210,6 +212,9 @@ export interface RoadStop {
 
 export interface Achievement {
   id: string;
+  /** One of the badges shown on the home screen. */
+  badge?: boolean;
+  icon?: string;
   name: string;
   how: string;
   cite?: string;
@@ -292,6 +297,8 @@ export interface TodayView {
   yesterday: DayResult | null;
   player: PlayerView;
   announcements: { id: number; title: string; body: string }[];
+  /** The badges, each with the date it was earned (if it was). */
+  badges: Achievement[];
   notes: { id: number; text: string; at: number }[];
   features: { berean: boolean; sundaySchool: boolean; revelation: boolean; achievements: boolean; wordingSwitch: boolean; aiCheck: boolean };
   books: BookSpan[];
@@ -327,4 +334,28 @@ export interface ConcordanceView {
 export interface ApiError {
   error: string;
   message: string;
+}
+
+export interface StandingRow {
+  rank: number;
+  name: string;
+  manna: number;
+  hops: number;
+  oil: number;
+  won: boolean;
+  tiers: import('./rules.ts').Tier[];
+  you: boolean;
+}
+
+/** How a day's finished journeys rank (won first, then manna, then oil left, then fewer hops). */
+export interface StandingsView {
+  date: string;
+  puzzleNo: number;
+  players: number;
+  won: number;
+  /** Manna of the journeys that made it home, in bins. */
+  bins: { from: number; to: number; count: number }[];
+  lost: number;
+  you: { rank: number; of: number; better: number; manna: number; won: boolean; bin: number } | null;
+  top: StandingRow[];
 }

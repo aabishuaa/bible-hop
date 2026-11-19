@@ -344,3 +344,19 @@ describe('accounts (rule 18.1)', () => {
     await expect(new Browser().post('/api/account/login', { name: 'abishua', password: 'wrong' })).rejects.toMatchObject({ status: 401 });
   });
 });
+
+describe('standings', () => {
+  it('ranks finished journeys: home first, then manna, and shows where you landed', async () => {
+    at('2026-11-21T18:00:00Z');
+    const day = '2026-11-21';
+    const loser = new Browser();
+    await loser.start();
+    for (const typed of ['Jesus wept', 'Pray without ceasing', 'In the beginning God created the heaven and the earth']) await loser.act('hop', { door: 'light', typed, reference: '' });
+    await loser.act('grace', { use: false });
+    const s = await loser.get<import('../shared/types.ts').StandingsView>(`/api/standings?date=${day}`);
+    expect(s.players).toBeGreaterThanOrEqual(1);
+    expect(s.you).toMatchObject({ won: false, bin: -1 });
+    expect(s.lost).toBeGreaterThanOrEqual(1);
+    expect(s.top.find((r) => r.you)!.won).toBe(false);
+  });
+});

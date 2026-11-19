@@ -7,7 +7,7 @@ import type { RuleSet } from '../../shared/rules.ts';
 import { defaultRules } from '../../shared/rules.ts';
 import type {
   Achievement, ActionResult, ConcordanceView, DayResult, FinaleView, HistoryView, JourneyKind, JourneyMode, JourneyView,
-  PlayerView, RevelationView, TodayView, Wording,
+  PlayerView, RevelationView, StandingRow, StandingsView, TodayView, Wording,
 } from '../../shared/types.ts';
 import type { Bible } from '../bible/bible.ts';
 import { loadBible } from '../bible/bible.ts';
@@ -17,7 +17,7 @@ import {
   addDays, dateClosesAt, dateOpensAt, dayDiff, deadlineFor, isDate, isValidTimeZone, localDate, now as clockNow, oldestOpenDate, tzLabel, weekday,
 } from '../game/clock.ts';
 import type { EngineResult } from '../game/engine.ts';
-import { attemptHop, checkDeadline, confirmChoice, decideGrace, lookBack, rulesOf, setMode } from '../game/engine.ts';
+import { attemptHop, checkDeadline, confirmChoice, decideGrace, goldenRoadHome, lookBack, rulesOf, setMode } from '../game/engine.ts';
 import { ACHIEVEMENTS, buildFinale, buildShare, earned, verseText } from '../game/finale.ts';
 import type { Journey, World } from '../game/journey.ts';
 import { newJourney } from '../game/journey.ts';
@@ -523,9 +523,69 @@ export class Game {
       yesterday: this.dayResult(p, addDays(date, -1)),
       player: this.playerView(p, date),
       announcements: active,
+      badges: this.badgesOf(p.id),
       notes,
       features: { berean: r['feature.berean'], sundaySchool: r['feature.sundaySchool'], revelation: r['feature.revelation'], achievements: r['feature.achievements'], wordingSwitch: r['feature.wordingSwitch'], aiCheck: r['feature.aiCheck'] && this.ai.ready },
       books: bookSpans(this.bible),
+    };
+  }
+
+  /** The home screen's badges, each with the date it was earned. */
+  badgesOf(playerId: string): Achievement[] {
+    const mine = new Map(this.db.all<{ id: string; earned_on: string }>('SELECT id, earned_on FROM achievements WHERE player_id = ?', playerId).map((r) => [r.id, r.earned_on]));
+    return ACHIEVEMENTS.filter((a) => a.badge).map((a) => ({ ...a, earnedOn: mine.get(a.id) }));
+  }
+
+  /**
+   * The day's standings. Journeys that made it home rank above those that did not; then more manna,
+   * then more oil left, then fewer hops, then whoever finished first. Scribes' journeys are left out,
+   * except the asking Scribe's own.
+   */
+  standings(p: PlayerRow, dateRaw: unknown): StandingsView {
+    if (!isDate(dateRaw)) throw new GameError('bad_date', 'That is not a date.');
+    const date = dateRaw;
+    this.sweepAll(this.now());
+    type R = { player_id: string; status: string; manna: number; hops: number; finished_at: number | null; data: string; name: string | null };
+    const rows = this.db.all<R>(
+      "SELECT j.player_id, j.status, j.manna, j.hops, j.finished_at, j.data, pl.name FROM journeys j LEFT JOIN players pl ON pl.id = j.player_id WHERE j.date = ? AND j.kind = 'daily' AND j.status != 'playing' AND (j.scribe = 0 OR j.player_id = ?) LIMIT 20000",
+      date, p.id,
+    );
+    const list = rows.map((r) => {
+      const j = JSON.parse(r.data) as Journey;
+      return { id: r.player_id, name: r.name ?? `Guest ${r.player_id.slice(0, 4).toUpperCase()}`, won: r.status === 'won', manna: r.manna, oil: Math.max(0, j.oil), hops: r.hops, at: r.finished_at ?? 0, tiers: j.path.map((h) => h.tier) };
+    });
+    list.sort((a, b) => Number(b.won) - Number(a.won) || b.manna - a.manna || b.oil - a.oil || a.hops - b.hops || a.at - b.at);
+    const winners = list.filter((x) => x.won).map((x) => x.manna);
+    // bins of a round width that cover the winners in at most 10 bars
+    const bins: StandingsView['bins'] = [];
+    if (winners.length) {
+      const lo = Math.min(...winners), hi = Math.max(...winners);
+      const width = Math.max(5, Math.ceil((hi - lo + 1) / 10 / 5) * 5);
+      const start = Math.floor(lo / width) * width;
+      for (let from = start; from <= hi; from += width) bins.push({ from, to: from + width - 1, count: 0 });
+      for (const m of winners) bins[Math.floor((m - start) / width)].count++;
+    }
+    const mineAt = list.findIndex((x) => x.id === p.id);
+    const row = (x: (typeof list)[number], i: number): StandingRow => ({ rank: i + 1, name: x.name, manna: x.manna, hops: x.hops, oil: x.oil, won: x.won, tiers: x.tiers, you: x.id === p.id });
+    const top = list.slice(0, 10).map(row);
+    if (mineAt >= 10) top.push(row(list[mineAt], mineAt));
+    const me = mineAt >= 0 ? list[mineAt] : null;
+    return {
+      date,
+      puzzleNo: this.puzzleNo(date),
+      players: list.length,
+      won: winners.length,
+      bins,
+      lost: list.length - winners.length,
+      you: me ? {
+        rank: mineAt + 1,
+        of: list.length,
+        better: list.length > 1 ? Math.round((100 * (list.length - 1 - mineAt)) / (list.length - 1)) : 100,
+        manna: me.manna,
+        won: me.won,
+        bin: me.won && bins.length ? bins.findIndex((b) => me.manna >= b.from && me.manna <= b.to) : -1,
+      } : null,
+      top,
     };
   }
 
@@ -676,6 +736,14 @@ export class Game {
       const offered = j.pending?.type === 'grace';
       const res = decideGrace(w, j, body.use === true, at);
       if (j.kind === 'daily' && offered) this.track(body.use === true ? 'grace.used' : 'grace.declined', p.id, j.date, {});
+      return res;
+    });
+  }
+
+  golden(p: PlayerRow, body: { journeyId?: unknown; version?: unknown }): Promise<ActionResult> {
+    return this.act(p, body, (w, j, at) => {
+      const res = goldenRoadHome(w, j, at);
+      this.trackAttempt(j, res);
       return res;
     });
   }

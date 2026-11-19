@@ -74,6 +74,8 @@ export function buildApp(game: Game, opts: AppOptions = {}): FastifyInstance {
   app.post('/api/journey/confirm', async (req, reply) => game.confirm(player(req, reply), (req.body ?? {}) as Body));
   app.post('/api/journey/lookback', async (req, reply) => game.lookBack(player(req, reply), (req.body ?? {}) as Body));
   app.post('/api/journey/grace', async (req, reply) => game.grace(player(req, reply), (req.body ?? {}) as Body));
+  app.post('/api/journey/golden', async (req, reply) => game.golden(player(req, reply), (req.body ?? {}) as Body));
+  app.get('/api/standings', async (req, reply) => game.standings(player(req, reply), (req.query as Query).date));
   app.post('/api/journey/mode', async (req, reply) => game.mode(player(req, reply), (req.body ?? {}) as Body));
   app.post('/api/journey/report', async (req, reply) => game.report(player(req, reply), (req.body ?? {}) as Body));
 

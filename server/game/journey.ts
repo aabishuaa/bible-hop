@@ -98,6 +98,10 @@ export interface Journey {
   failsHere: number;
   /** Whether Berean Mode is fixed for the day (it is, from the first hop attempt). */
   modeFixed: boolean;
+  /** The verse a Golden Nugget brought the player to: from there one tap takes them home. */
+  goldenRoad?: number;
+  /** The path length at which coming home first became possible (for Prodigal's Return). */
+  gateOpenedAt?: number;
 }
 
 export interface NewJourney {

@@ -9,11 +9,12 @@ export const TIER_COLOR: Record<FlipTier, string> = {
   loaf: '#b5522a',
   fish: '#1c6e8c',
   pearl: '#7b4a9e',
+  nugget: '#d49a12',
   home: '#c79226',
   wall: '#8a8179',
 };
 
-export const TIER_LABEL: Record<FlipTier, string> = { crumb: 'Crumb', loaf: 'Loaf', fish: 'Fish', pearl: 'Pearl', home: 'Home', wall: 'Wall' };
+export const TIER_LABEL: Record<FlipTier, string> = { crumb: 'Crumb', loaf: 'Loaf', fish: 'Fish', pearl: 'Pearl', nugget: 'Golden Nugget', home: 'Home', wall: 'Wall' };
 
 /** What each tier means, in a few plain words. */
 export const TIER_HINT: Record<Tier, string> = {
@@ -21,6 +22,7 @@ export const TIER_HINT: Record<Tier, string> = {
   loaf: 'A common word, found in 300 verses or more.',
   fish: 'A less common word, found in 30 to 299 verses.',
   pearl: 'A rare word, found in fewer than 30 verses.',
+  nugget: 'Found in just one other verse. Worth 50, and it opens the Golden Road home.',
   wall: 'This word is found in this verse only, so it leads nowhere.',
 };
 
@@ -39,6 +41,7 @@ export const FLIP_FEEL: Record<FlipTier, { duration: number; stagger: number; cu
   loaf: { duration: 720, stagger: 120, curl: 0.65, maxLeaves: 4 },
   fish: { duration: 1050, stagger: 170, curl: 0.82, maxLeaves: 6 },
   pearl: { duration: 1600, stagger: 240, curl: 0.92, maxLeaves: 7 },
+  nugget: { duration: 1900, stagger: 230, curl: 0.95, maxLeaves: 9 },
   home: { duration: 1350, stagger: 160, curl: 0.86, maxLeaves: 8 },
   wall: { duration: 600, stagger: 100, curl: 0.6, maxLeaves: 2 },
 };

@@ -352,6 +352,8 @@ function continueHop(w: World, j: Journey, intent: HopIntent, ref: ParsedRef | n
     at,
   };
   j.path.push(hop);
+  // the Golden Road is open only from the verse a Golden Nugget brought you to
+  j.goldenRoad = undefined;
 
   // 5) home: the Fatted Calf is added and the day is won. Nothing else is checked.
   if (isHome) {
@@ -373,6 +375,8 @@ function continueHop(w: World, j: Journey, intent: HopIntent, ref: ParsedRef | n
     j.widow.push(verse);
   }
   log(j, { type: 'attempt', code: 'hop.ok', door: word, typed: intent.typed, reference: intent.refText, verse }, at);
+  if (tier === 'nugget') j.goldenRoad = verse;
+  if (j.gateOpenedAt === undefined && cordCount(j) >= r['cord.verses'] && j.manna >= r['gate.manna']) j.gateOpenedAt = j.path.length;
   const shown = hop.forms.find((f) => f === word.toLowerCase()) ?? hop.forms[0] ?? word;
   const ok = message('hop.ok', { ref: hop.toRef, word, form: shown, n: manna, bonus: refScore, revisit: revisit ? 1 : 0, oil: burn, widow: hop.widow || undefined });
 
@@ -383,12 +387,51 @@ function continueHop(w: World, j: Journey, intent: HopIntent, ref: ParsedRef | n
   }
   const losses: GraceLoss[] = [];
   if (j.oil <= 0) losses.push('lamp');
-  if (openDoors(w, j, verse).length === 0) losses.push('fish');
+  // with the Golden Road open there is always a way out, so the fish cannot swallow you
+  if (openDoors(w, j, verse).length === 0 && j.goldenRoad !== verse) losses.push('fish');
+  const golden = tier === 'nugget' ? [message('hop.nugget', { n: r['calf.multiplier'] * tierValue('nugget', r) })] : [];
   if (losses.length) {
     const out = graceOrLose(w, j, losses, at);
-    return { ...out, message: ok, notes: out.message ? [out.message] : [], hop };
+    return { ...out, message: ok, notes: [...golden, ...(out.message ? [out.message] : [])], hop };
   }
-  return result('hop', ok, { hop });
+  return result('hop', ok, { hop, notes: golden });
+}
+
+/**
+ * The Golden Road: a player a Golden Nugget brought to a verse may walk straight home from it,
+ * without a shared word, whatever the cord or the manna. It burns a hop's oil and counts as a hop,
+ * and the Fatted Calf is that of the nugget.
+ */
+export function goldenRoadHome(w: World, j: Journey, at: number): EngineResult {
+  if (checkDeadline(j, at)) return result('lost', message('time.over'));
+  if (!isActive(j)) return result('nothing', null);
+  if (j.goldenRoad === undefined || j.goldenRoad !== j.current) return result('refuse', message('golden.closed'));
+  const r = rulesOf(w, j);
+  bump(j);
+  j.pending = null;
+  j.modeFixed = true;
+  const last = j.path[j.path.length - 1];
+  const from = j.current;
+  const burn = r['oil.hop'];
+  j.oil -= burn;
+  j.strikes = 0;
+  j.failsHere = 0;
+  j.hopsTaken++;
+  j.current = j.home;
+  j.goldenRoad = undefined;
+  const calf = roundHalfUp(tierValue('nugget', r) * r['calf.multiplier']);
+  const hop: HopRecord = {
+    n: j.hopsTaken, from, to: j.home, fromRef: label(w, from), toRef: label(w, j.home), doorWord: 'the Golden Road', family: last?.family ?? '',
+    forms: [], tier: 'nugget', base: 0, refText: '', refScore: 'none', multiplier: 1, manna: 0, oil: burn, revisit: false, widow: 0,
+    home: true, calf, how: 'golden', at,
+  };
+  j.path.push(hop);
+  j.fattedCalf = calf;
+  j.manna += calf;
+  j.status = 'won';
+  j.finishedAt = at;
+  log(j, { type: 'attempt', code: 'hop.golden', verse: j.home }, at);
+  return result('home', message('hop.goldenHome', { n: calf }), { hop });
 }
 
 /**
@@ -436,6 +479,8 @@ function undoHop(j: Journey, hop: HopRecord): void {
   j.manna -= hop.manna;
   j.undone.push(hop);
   j.failsHere = 0;
+  if (j.goldenRoad === hop.to) j.goldenRoad = undefined;
+  if (j.gateOpenedAt !== undefined && j.path.length < j.gateOpenedAt) j.gateOpenedAt = undefined;
 }
 
 export function lookBack(w: World, j: Journey, at: number): EngineResult {

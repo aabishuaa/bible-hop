@@ -18,7 +18,7 @@ export interface Family {
   /** Every verse whose KJV or WEB wording contains any form (rule 4.6), in canonical order. */
   verses: Int32Array;
   crumb: boolean;
-  pin?: Exclude<Tier, 'wall'>;
+  pin?: Exclude<Tier, 'wall' | 'nugget'>;
 }
 
 /** Regular endings (rule 4.3), most likely base first. Dropped e and doubled consonants are handled. */
@@ -272,7 +272,7 @@ export class Lexicon {
     if (fam.crumb) return 'crumb';
     if (count >= rules['tier.loafMin']) return 'loaf';
     if (count >= rules['tier.fishMin']) return 'fish';
-    if (count >= rules['tier.pearlMin']) return 'pearl';
+    if (count >= rules['tier.pearlMin']) return count <= rules['tier.nuggetMax'] ? 'nugget' : 'pearl';
     return 'wall';
   }
 

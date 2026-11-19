@@ -11,6 +11,7 @@ import { useApp } from '../../app-store.ts';
 import { burst } from '../../fx/burst.ts';
 import { flipStage } from '../../fx/flip.ts';
 import { Cover } from './Cover.tsx';
+import { HomeCelebration, NuggetFlash } from './Celebrations.tsx';
 import type { FlipPlan } from '../../fx/flip.ts';
 import { haptics } from '../../fx/haptics.ts';
 import { leafTexture } from '../../fx/paper.ts';
@@ -68,6 +69,8 @@ export function JourneyScreen({ initial, clockSkew, coach, onFinale, onExit }: J
   const [coachStep, setCoachStep] = useState(0);
   const [wash, setWash] = useState<Tier | 'home' | null>(null);
   const [entryKey, setEntryKey] = useState<string | undefined>(undefined);
+  const [nugget, setNugget] = useState(false);
+  const [celebrate, setCelebrate] = useState<FinaleView | null>(null);
 
   const toast = useApp((s) => s.toast);
   const wide = useIsWide();
@@ -291,10 +294,7 @@ export function JourneyScreen({ initial, clockSkew, coach, onFinale, onExit }: J
         setGain({ n: hop.manna + hop.calf, tier: hop.tier, key: Date.now(), home: hop.home });
         sound.manna(hop.manna + hop.calf, 0.05);
         if (hop.widow) window.setTimeout(() => sound.oilRefill(hop.widow), 500);
-        if (hop.home) {
-          sound.home(0.1);
-          haptics.home();
-        }
+        if (hop.tier === 'nugget' && !hop.home) setNugget(true);
         if (coach && coach.steps[coachStep]?.fill) setCoachStep((s) => s + 1);
       } else if (r.undone) {
         // looking back, or Grace for the fish: the pages turn back
@@ -328,7 +328,8 @@ export function JourneyScreen({ initial, clockSkew, coach, onFinale, onExit }: J
           else sound.loss(f.loss.reason);
           haptics.loss();
         }
-        window.setTimeout(() => onFinale(f), f.won ? 2400 : 1700);
+        if (f.won && f.kind !== 'guide') window.setTimeout(() => setCelebrate(f), 350);
+        else window.setTimeout(() => onFinale(f), f.won ? 1600 : 1700);
       }
     },
     [clearSlip, coach, coachStep, onFinale, toast, turnPages],
@@ -480,6 +481,13 @@ export function JourneyScreen({ initial, clockSkew, coach, onFinale, onExit }: J
               <span className="num" aria-hidden="true">{j.current.verse}</span>
               <VerseWords verse={j.current} wording={shownWording} chosen={door?.key ?? null} entry={entryKey} spot={coachNow?.spot} shake={shake} onTap={tapWord} />
             </p>
+            {j.goldenRoad && !door && (
+              <button className="golden-road" disabled={busy || turning} onClick={() => { press(); void run(() => api.golden(ref)); }}>
+                <span className="tier-badge tier-nugget" style={{ width: 40, height: 40 }}><Icon name="nugget" size={22} /></span>
+                <span><b>Take the Golden Road home</b><small>One tap takes you straight home, with a feast</small></span>
+                <Icon name="home" size="1.4rem" strokeWidth={2.2} />
+              </button>
+            )}
             <AnimatePresence>
               {gain && (
                 <motion.div key={gain.key} className={`gain tier-${gain.home ? 'home' : gain.tier}`} initial={false} onAnimationEnd={() => setGain(null)} aria-live="polite">
@@ -518,6 +526,8 @@ export function JourneyScreen({ initial, clockSkew, coach, onFinale, onExit }: J
         </div>
       </div>
 
+      {nugget && <NuggetFlash onDone={() => setNugget(false)} />}
+      {celebrate && <HomeCelebration finale={celebrate} onDone={() => { const f = celebrate; setCelebrate(null); onFinale(f); }} />}
       <Cover journeyId={j.id} spread={spread} stageRef={bookRef} rightRef={rightPage} leftRef={leftPage} />
       <Torn side="top" depth={14} seed={9} className="band-bottom">
         <div className="dock">

@@ -11,6 +11,8 @@ import { sound } from '../fx/sound.ts';
 import { isReducedMotion } from '../prefs.ts';
 import { navigate } from '../router.ts';
 import { TIER_COLOR } from '../theme.ts';
+import { Medal } from '../ui/Badges.tsx';
+import { Standings } from '../ui/Standings.tsx';
 import { DotsDeco, LinesDeco, PaperCanvas, Torn, plural, press, useDocumentTitle } from '../ui/base.tsx';
 import { Icon, TierBadge } from '../ui/icons.tsx';
 import { lossIcon } from './journey/modals.tsx';
@@ -143,14 +145,21 @@ function Finale({ f }: { f: FinaleView }) {
       )}
 
       {f.achievements.length > 0 && (
-        <div className="badge-row">
-          {f.achievements.map((a) => (
+        <div className="finale-badges">
+          {f.achievements.map((a) => a.badge ? <Medal key={a.id} a={a} size={72} /> : (
             <div key={a.id} className="badge earned">
-              <span className="medal"><Icon name="sparkle" /></span>
-              <span><b>{a.name}</b><span>{a.how}{a.cite ? ` · ${a.cite}` : ''}</span></span>
+              <span className="medal-small"><Icon name="sparkle" /></span>
+              <span><b>{a.name}</b><span>{a.how}{a.cite ? ` \u00b7 ${a.cite}` : ''}</span></span>
             </div>
           ))}
         </div>
+      )}
+
+      {!guide && !practice && (
+        <>
+          <h2 className="display">Today&rsquo;s <em>standings</em></h2>
+          <Standings date={f.date} />
+        </>
       )}
 
       {!guide && (

@@ -9,6 +9,7 @@ import { DailyPlay, GuidePlay } from './screens/Play.tsx';
 import { PracticeScreen } from './screens/PracticeScreen.tsx';
 import { RevelationScreen } from './screens/RevelationScreen.tsx';
 import { SettingsScreen } from './screens/SettingsScreen.tsx';
+import { StandingsScreen } from './screens/StandingsScreen.tsx';
 import { TodayScreen } from './screens/TodayScreen.tsx';
 
 const Desk = lazy(() => import('./desk/Desk.tsx'));
@@ -79,6 +80,7 @@ export function App() {
   else if (route === '/history') screen = <HistoryScreen />;
   else if (route === '/settings') screen = <SettingsScreen today={today} />;
   else if (route === '/how') screen = <HowToPlay />;
+  else if (route.startsWith('/standings/')) screen = <StandingsScreen date={route.split('/')[2]} />;
   else if (route.startsWith('/revelation/')) screen = <RevelationScreen date={route.split('/')[2]} />;
   else screen = <TodayScreen today={today} clockSkew={skew.current} />;
 

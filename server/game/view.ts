@@ -102,6 +102,7 @@ export function journeyView(w: World, j: Journey, wording: Wording, at: number):
     chain,
     pending: j.status === 'playing' ? pendingView(w, j, wording) : null,
     lookBack: lookBackCost(w, j),
+    goldenRoad: j.status === 'playing' && j.goldenRoad !== undefined && j.goldenRoad === j.current && !j.pending,
     canChangeMode: j.status === 'playing' && !j.modeFixed && r['feature.berean'] && j.kind !== 'guide',
     lateMinutes: j.status === 'playing' && minutesLeft !== null && minutesLeft <= r['clock.lateWarningMinutes'] ? minutesLeft : undefined,
     features: { wordingSwitch: r['feature.wordingSwitch'], berean: r['feature.berean'], concordance: j.kind === 'practice' },

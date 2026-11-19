@@ -224,6 +224,17 @@ class SoundEngine {
       this.bell(N.B5, 0, 0.11, 0.9);
       this.bell(N.Fs6, 0.07, 0.06, 0.8);
     }
+    if (tier === 'nugget') {
+      [N.D6, N.Fs6, N.A6].forEach((f, i) => this.bell(f, i * 0.05, 0.09, 1.1, (i - 1) * 0.3));
+      this.noise({ dur: 0.5, gain: 0.03, type: 'highpass', freq: 7500, wet: 0.5 });
+    }
+  }
+
+  /** A Golden Nugget found: a shower of coins and a rising fanfare. */
+  nugget(at = 0): void {
+    for (let i = 0; i < 14; i++) this.tone({ at: at + i * 0.045, freq: 1400 + ((i * 337) % 900), to: 2100 + ((i * 211) % 700), dur: 0.08, gain: 0.06, wet: 0.3, pan: ((i % 5) - 2) * 0.2 });
+    [N.D5, N.Fs5, N.A5, N.D6, N.Fs6, N.A6].forEach((f, i) => this.bell(f, at + 0.15 + i * 0.08, 0.1, 1.6, (i - 2.5) * 0.18));
+    this.tone({ at: at + 0.1, freq: N.D3, dur: 1.4, gain: 0.08, attack: 0.1, type: 'triangle', lowpass: 1500, wet: 0.6 });
   }
 
   wall(): void {
@@ -246,8 +257,8 @@ class SoundEngine {
 
   /** One page turning. Crumbs flick, loaves turn briskly, fish glide, pearls sweep slowly. */
   flip(tier: FlipTier, dir: number, at = 0): void {
-    const d = { crumb: 0.1, loaf: 0.15, fish: 0.24, pearl: 0.34, home: 0.3, wall: 0.15 }[tier];
-    const bright = { crumb: 5200, loaf: 4200, fish: 3400, pearl: 3000, home: 3600, wall: 4000 }[tier];
+    const d = { crumb: 0.1, loaf: 0.15, fish: 0.24, pearl: 0.34, nugget: 0.38, home: 0.3, wall: 0.15 }[tier];
+    const bright = { crumb: 5200, loaf: 4200, fish: 3400, pearl: 3000, nugget: 3800, home: 3600, wall: 4000 }[tier];
     const pan = -0.35 * dir;
     // the rush of the paper through the air, then the slap as it lands
     this.noise({ at, dur: d, gain: 0.16, freq: bright * 0.5, to: bright, q: 0.7, highpass: 500, pan: -pan, attack: d * 0.35 });
@@ -271,6 +282,7 @@ class SoundEngine {
       this.pluck(N.G5, at + 0.2, 0.12);
       this.pluck(N.B5, at + 0.3, 0.1);
     }
+    if (tier === 'nugget') this.nugget(at + 0.05);
     if (tier === 'pearl') {
       [N.E5, N.Gs5, N.B5, N.E6].forEach((f, i) => this.bell(f, at + 0.05 + i * 0.11, 0.11 - i * 0.012, 1.4, (i - 1.5) * 0.25));
       this.noise({ at: at + 0.05, dur: 0.7, gain: 0.025, type: 'highpass', freq: 7000, wet: 0.5 });

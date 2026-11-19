@@ -7,7 +7,7 @@ import type { Achievement, FinaleView, HopRecord, NumbersView, RoadStop, VerseTe
 import { rulesOf } from './engine.ts';
 import type { Journey, World } from './journey.ts';
 
-const EMOJI: Record<Tier, string> = { crumb: '▫️', loaf: '\u{1F35E}', fish: '\u{1F41F}', pearl: '\u{1F9AA}', wall: '' };
+const EMOJI: Record<Tier, string> = { crumb: '▫️', loaf: '\u{1F35E}', fish: '\u{1F41F}', pearl: '\u{1F9AA}', nugget: '\u{1F7E1}', wall: '' };
 const HOUSE = '\u{1F3E0}';
 const NEW_MOON = '\u{1F311}';
 const LAMP = '\u{1FA94}';
@@ -106,6 +106,13 @@ export const ACHIEVEMENTS: Achievement[] = [
   { id: 'forty', name: 'Forty Years', how: 'Come home on your 40th hop.', cite: 'Numbers 14:33' },
   { id: 'salt', name: 'Pillar of Salt', how: 'Look back 5 times in one day.', cite: 'Genesis 19:26' },
   { id: 'seventy', name: 'Seventy Times Seven', how: 'Reach a 490-day streak.', cite: 'Matthew 18:22' },
+  // the badges shown on the home screen
+  { id: 'prodigal', badge: true, icon: 'home', name: 'Prodigal\u2019s Return', how: 'Come home the moment the way home opens.', cite: 'Luke 15:20' },
+  { id: 'bread', badge: true, icon: 'loaf', name: 'Daily Bread', how: 'Come home using only Loaves.', cite: 'Matthew 6:11' },
+  { id: 'fishers', badge: true, icon: 'fish', name: 'Fishers of Men', how: 'Come home using only Fish.', cite: 'Matthew 4:19' },
+  { id: 'gold', badge: true, icon: 'nugget', name: 'Streets of Gold', how: 'Hop through a Golden Nugget.', cite: 'Revelation 21:21' },
+  { id: 'law', badge: true, icon: 'scroll', name: 'The Law and the Prophets', how: 'Come home without leaving the Old Testament.', cite: 'Matthew 5:17' },
+  { id: 'covenant', badge: true, icon: 'cross', name: 'New Covenant', how: 'Come home without leaving the New Testament.', cite: 'Luke 22:20' },
 ];
 
 /** The achievements one finished journey earns. `streak` is the player's streak after this day. */
@@ -116,7 +123,7 @@ export function earned(w: World, j: Journey, streak: number, firstFinished: bool
   const visited = new Set<number>([book(j.home), ...j.path.map((h) => book(h.to))]);
   if (firstFinished) out.push('grasshopper');
   if (won && j.looksBack === 0 && !j.path.some((h) => h.revisit)) out.push('enoch');
-  if (won && j.path[j.path.length - 1]?.tier === 'pearl') out.push('pearl');
+  if (won && (j.path[j.path.length - 1]?.tier === 'pearl' || j.path[j.path.length - 1]?.tier === 'nugget')) out.push('pearl');
   // "after exactly 5 Loaf hops and 2 Fish hops": the hops of the day, the homecoming included
   if (won && j.path.filter((h) => h.tier === 'loaf').length === 5 && j.path.filter((h) => h.tier === 'fish').length === 2 && j.path.length === 7) out.push('loaves');
   if (j.path.some((h) => (book(h.from) === 0 && book(h.to) === 65) || (book(h.from) === 65 && book(h.to) === 0))) out.push('jehoshaphat');
@@ -132,6 +139,15 @@ export function earned(w: World, j: Journey, streak: number, firstFinished: bool
   if (won && j.hopsTaken === rulesOf(w, j)['wilderness.hops']) out.push('forty');
   if (j.looksBack >= 5) out.push('salt');
   if (streak >= 490) out.push('seventy');
+  // the badges
+  const last = j.path[j.path.length - 1];
+  if (won && last && (last.how === 'golden' || (j.gateOpenedAt !== undefined && j.path.length - 1 === j.gateOpenedAt))) out.push('prodigal');
+  if (won && j.path.length && j.path.every((h) => h.tier === 'loaf')) out.push('bread');
+  if (won && j.path.length && j.path.every((h) => h.tier === 'fish')) out.push('fishers');
+  if (j.path.some((h) => h.tier === 'nugget')) out.push('gold');
+  const testaments = new Set([j.home, ...j.path.map((h) => h.to)].map((v) => BOOKS[book(v)].testament));
+  if (won && testaments.size === 1 && testaments.has('OT')) out.push('law');
+  if (won && testaments.size === 1 && testaments.has('NT')) out.push('covenant');
   return out;
 }
 

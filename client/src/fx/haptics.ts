@@ -52,7 +52,7 @@ class Haptics {
   }
 
   door(tier: Tier): void {
-    this.play({ crumb: 6, loaf: 11, fish: [9, 26, 9], pearl: [6, 30, 6, 30, 14], wall: [22] }[tier]);
+    this.play({ crumb: 6, loaf: 11, fish: [9, 26, 9], pearl: [6, 30, 6, 30, 14], nugget: [8, 24, 8, 24, 8, 24, 30], wall: [22] }[tier]);
   }
 
   used(): void {
@@ -61,7 +61,7 @@ class Haptics {
 
   /** One tick for each page as it turns, then a firmer one as the last lands. */
   flip(leaves: number, staggerMs: number, durationMs: number, tier: FlipTier): void {
-    const landing = { crumb: 10, loaf: 16, fish: 22, pearl: 30, home: 40, wall: 16 }[tier];
+    const landing = { crumb: 10, loaf: 16, fish: 22, pearl: 30, nugget: 45, home: 40, wall: 16 }[tier];
     const pattern: number[] = [];
     let at = 0;
     for (let i = 0; i < leaves; i++) {
@@ -71,7 +71,7 @@ class Haptics {
     const rest = Math.max(10, durationMs + (leaves - 1) * staggerMs - at);
     pattern[pattern.length - 1] = Math.max(10, pattern[pattern.length - 1] + rest - landing);
     pattern.push(landing);
-    if (tier === 'pearl' || tier === 'home') pattern.push(50, 14, 50, 22);
+    if (tier === 'pearl' || tier === 'home' || tier === 'nugget') pattern.push(50, 14, 50, 22);
     this.play(pattern);
   }
 

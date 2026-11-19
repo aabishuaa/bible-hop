@@ -21,6 +21,9 @@ const CATALOG: Record<string, { tone: Tone; text: (p: P) => string }> = {
       return parts.join(' \u00b7 ');
     },
   },
+  'hop.nugget': { tone: 'good', text: (p) => `Golden Nugget! The Golden Road home is open: one tap takes you home for ${p.n} manna.` },
+  'hop.goldenHome': { tone: 'good', text: (p) => `Home by the Golden Road. The feast adds ${p.n} manna.` },
+  'golden.closed': { tone: 'warn', text: () => 'The Golden Road opens only from the verse a Golden Nugget brought you to.' },
   'hop.home': { tone: 'good', text: (p) => `Home through “${p.word}”. The homecoming feast adds ${p.n} manna.` },
   'refuse.same': { tone: 'warn', text: () => 'You are already standing on that verse. Hop somewhere new.' },
   'refuse.entry': { tone: 'warn', text: (p) => `You already came through the “${p.word}” door into ${p.ref}. Choose a different word.` },

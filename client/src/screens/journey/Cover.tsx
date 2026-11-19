@@ -29,6 +29,15 @@ export function Cover({ journeyId, spread, stageRef, rightRef, leftRef }: {
 }) {
   const [done, setDone] = useState(() => {
     if (isReducedMotion()) return true;
+    try {
+      if (sessionStorage.getItem('bible-hopping.skipCover')) {
+        sessionStorage.removeItem('bible-hopping.skipCover');
+        sessionStorage.setItem(`bible-hopping.opened.${journeyId}`, '1');
+        return true;
+      }
+    } catch {
+      /* fine */
+    }
     // the full opening plays once per journey per visit; coming back opens straight onto the verse
     try {
       const key = `bible-hopping.opened.${journeyId}`;

@@ -11,6 +11,7 @@ const TIERS: { tier: Tier; value: number; sample: string }[] = [
   { tier: 'loaf', value: 5, sample: 'God, word, beginning' },
   { tier: 'fish', value: 10, sample: 'light, oil, shepherd' },
   { tier: 'pearl', value: 25, sample: 'Goliath, mustard, Messiah' },
+  { tier: 'nugget', value: 50, sample: 'bdellium, Babel, tiller' },
 ];
 
 export function HowToPlay() {
@@ -56,6 +57,11 @@ export function HowToPlay() {
               <div><b>Wall</b><span className="d">{TIER_HINT.wall}</span></div>
               <span className="v">—</span>
             </div>
+          </div>
+
+          <div className="card cream" style={{ display: 'flex', gap: '0.8rem', alignItems: 'center' }}>
+            <TierBadge tier="nugget" size={44} />
+            <p><b>Golden Nuggets</b> are words found in just one other verse. Hop through one and the <b>Golden Road</b> opens: one tap takes you straight home, with a feast of 100 manna.</p>
           </div>
 
           <h2 className="display">Lamp oil, the <em>energy</em></h2>

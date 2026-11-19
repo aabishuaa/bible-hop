@@ -19,6 +19,8 @@ export interface RuleSet {
   'tier.loaf': number;
   'tier.fish': number;
   'tier.pearl': number;
+  'tier.nugget': number;
+  'tier.nuggetMax': number;
   'tier.loafMin': number;
   'tier.fishMin': number;
   'tier.pearlMin': number;
@@ -101,6 +103,8 @@ export const RULE_SPECS: RuleSpec[] = [
   N('tier.loaf', 5, 0, 100, 'Tiers', 'Loaf value'),
   N('tier.fish', 10, 0, 100, 'Tiers', 'Fish value'),
   N('tier.pearl', 25, 0, 100, 'Tiers', 'Pearl value'),
+  N('tier.nugget', 50, 0, 200, 'Tiers', 'Golden Nugget value (it also opens the Golden Road home)'),
+  N('tier.nuggetMax', 2, 2, 5, 'Tiers', 'Most verses a word may be in to be a Golden Nugget'),
   N('tier.loafMin', 300, 50, 2000, 'Tiers', 'Verse count that makes a Loaf'),
   N('tier.fishMin', 30, 5, 299, 'Tiers', 'Verse count that makes a Fish'),
   N('tier.pearlMin', 2, 2, 5, 'Tiers', 'Verse count that makes a Pearl; below it is a Wall'),
@@ -168,15 +172,16 @@ export function validateRules(r: RuleSet): string[] {
   if (r['oil.capacity'] < r['oil.start']) problems.push('oil.capacity must be at least oil.start');
   if (r['tier.fishMin'] >= r['tier.loafMin']) problems.push('tier.fishMin must be below tier.loafMin');
   if (r['tier.pearlMin'] >= r['tier.fishMin']) problems.push('tier.pearlMin must be below tier.fishMin');
+  if (r['tier.nuggetMax'] >= r['tier.fishMin']) problems.push('tier.nuggetMax must be below tier.fishMin');
   if (r['scribe.ratingHardMax'] >= r['scribe.ratingMediumMax']) problems.push('scribe.ratingHardMax must be below scribe.ratingMediumMax');
   return problems;
 }
 
-export type Tier = 'crumb' | 'loaf' | 'fish' | 'pearl' | 'wall';
-export const TIER_NAMES: Record<Tier, string> = { crumb: 'Crumb', loaf: 'Loaf', fish: 'Fish', pearl: 'Pearl', wall: 'Wall' };
+export type Tier = 'crumb' | 'loaf' | 'fish' | 'pearl' | 'nugget' | 'wall';
+export const TIER_NAMES: Record<Tier, string> = { crumb: 'Crumb', loaf: 'Loaf', fish: 'Fish', pearl: 'Pearl', nugget: 'Golden Nugget', wall: 'Wall' };
 
 export function tierValue(tier: Tier, r: RuleSet): number {
-  return tier === 'crumb' ? r['tier.crumb'] : tier === 'loaf' ? r['tier.loaf'] : tier === 'fish' ? r['tier.fish'] : tier === 'pearl' ? r['tier.pearl'] : 0;
+  return tier === 'crumb' ? r['tier.crumb'] : tier === 'loaf' ? r['tier.loaf'] : tier === 'fish' ? r['tier.fish'] : tier === 'pearl' ? r['tier.pearl'] : tier === 'nugget' ? r['tier.nugget'] : 0;
 }
 
 /** Rule 6.1: rounded half up. */

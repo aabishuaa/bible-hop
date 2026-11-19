@@ -1,6 +1,6 @@
 // Talking to the game server. The server decides everything; the client only shows it.
 import type {
-  ActionResult, ConcordanceView, FinaleView, HistoryView, JourneyView, PlayerView, RevelationView, TodayView,
+  ActionResult, ConcordanceView, FinaleView, HistoryView, JourneyView, PlayerView, RevelationView, StandingsView, TodayView,
 } from '../../shared/types.ts';
 
 export class ApiError extends Error {
@@ -71,6 +71,8 @@ export const api = {
   confirm: (r: Ref, choice: number | null) => call<ActionResult>('POST', '/api/journey/confirm', { ...r, choice }),
   lookBack: (r: Ref) => call<ActionResult>('POST', '/api/journey/lookback', r),
   grace: (r: Ref, use: boolean) => call<ActionResult>('POST', '/api/journey/grace', { ...r, use }),
+  golden: (r: Ref) => call<ActionResult>('POST', '/api/journey/golden', r),
+  standings: (date: string) => call<StandingsView>('GET', `/api/standings?${q({ date })}`),
   mode: (r: Ref, mode: 'standard' | 'berean') => call<ActionResult>('POST', '/api/journey/mode', { ...r, mode }),
   report: (journeyId: string, eventIndex: number, comment: string) => call<{ ok: true }>('POST', '/api/journey/report', { journeyId, eventIndex, comment }),
   finale: (p: { date?: string; journeyId?: string }) => call<FinaleView>('GET', `/api/finale?${q(p)}`),
