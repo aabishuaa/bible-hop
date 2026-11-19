@@ -61,6 +61,30 @@ export interface CalendarRow {
   updated_by: string | null;
 }
 
+/** One finished journey on the day's board. */
+interface Ranked {
+  id: string;
+  name: string;
+  guest: boolean;
+  scribe: boolean;
+  won: boolean;
+  manna: number;
+  score: number;
+  oil: number;
+  hops: number;
+  at: number;
+  tiers: import('../../shared/rules.ts').Tier[];
+}
+
+const GUEST_WORDS = ['Faithful', 'Joyful', 'Gentle', 'Bold', 'Humble', 'Patient', 'Steadfast', 'Merciful', 'Hopeful', 'Wise', 'Kind', 'Brave', 'Glad', 'Meek', 'Valiant', 'Blessed', 'Quiet', 'Eager', 'Thankful', 'Bright'];
+const GUEST_NOUNS = ['Sparrow', 'Shepherd', 'Pilgrim', 'Fisher', 'Sower', 'Dove', 'Lamb', 'Lily', 'Cedar', 'Olive', 'Psalmist', 'Gleaner', 'Watchman', 'Builder', 'Lamp', 'Vine', 'Reed', 'Raven', 'Mustard Seed', 'Wanderer'];
+
+/** A guest's name on the board: friendly, and the same for everyone who looks. */
+export function guestName(id: string): string {
+  const h = createHash('sha256').update(id).digest();
+  return `${GUEST_WORDS[h[0] % GUEST_WORDS.length]} ${GUEST_NOUNS[h[1] % GUEST_NOUNS.length]} ${10 + (h[2] % 90)}`;
+}
+
 export class GameError extends Error {
   constructor(
     readonly code: string,
@@ -549,56 +573,65 @@ export class Game {
     return this.db.get<{ n: number }>('SELECT COUNT(*) AS n FROM badge_awards WHERE player_id = ? AND id = ?', playerId, id)!.n;
   }
 
-  /**
-   * The day's standings. Journeys that made it home rank above those that did not; then more manna,
-   * then more oil left, then fewer hops, then whoever finished first. Scribes' journeys are left out,
-   * except the asking Scribe's own.
-   */
+  /** The day's finished journeys in rank order, worked out at most every few seconds per date. */
+  private standingsCache = new Map<string, { at: number; list: Ranked[]; playing: number }>();
+
+  private ranked(date: string, viewer: PlayerRow): { list: Ranked[]; playing: number } {
+    const at = this.now();
+    const hit = this.standingsCache.get(date);
+    let list: Ranked[];
+    let playing: number;
+    if (hit && at - hit.at < 4000) ({ list, playing } = hit);
+    else {
+      this.sweepAll(at);
+      type R = { player_id: string; status: string; manna: number; hops: number; finished_at: number | null; data: string; name: string | null; scribe: number };
+      const rows = this.db.all<R>(
+        "SELECT j.player_id, j.status, j.manna, j.hops, j.finished_at, j.data, j.scribe, pl.name FROM journeys j LEFT JOIN players pl ON pl.id = j.player_id WHERE j.date = ? AND j.kind = 'daily' AND j.status != 'playing' LIMIT 50000",
+        date,
+      );
+      list = rows.map((r) => {
+        const j = JSON.parse(r.data) as Journey;
+        const won = r.status === 'won';
+        return { id: r.player_id, name: r.name ?? guestName(r.player_id), guest: !r.name, scribe: !!r.scribe, won, manna: r.manna, score: won ? Math.max(0, r.manna) : 0, oil: Math.max(0, j.oil), hops: r.hops, at: r.finished_at ?? 0, tiers: j.path.map((h) => h.tier) };
+      });
+      list.sort((x, y) => Number(y.won) - Number(x.won) || y.manna - x.manna || y.oil - x.oil || x.hops - y.hops || x.at - y.at);
+      playing = this.db.get<{ n: number }>("SELECT COUNT(*) AS n FROM journeys WHERE date = ? AND kind = 'daily' AND status = 'playing' AND scribe = 0", date)!.n;
+      this.standingsCache.set(date, { at, list, playing });
+      if (this.standingsCache.size > 8) this.standingsCache.delete(this.standingsCache.keys().next().value!);
+    }
+    // Scribes know the verses in advance: their journeys are left out, except the viewer's own
+    return { list: list.filter((x) => !x.scribe || x.id === viewer.id), playing };
+  }
+
+  /** The day's standings, for everyone, guests included. The board is polled to stay live. */
   standings(p: PlayerRow, dateRaw: unknown): StandingsView {
     if (!isDate(dateRaw)) throw new GameError('bad_date', 'That is not a date.');
     const date = dateRaw;
-    this.sweepAll(this.now());
-    type R = { player_id: string; status: string; manna: number; hops: number; finished_at: number | null; data: string; name: string | null };
-    const rows = this.db.all<R>(
-      "SELECT j.player_id, j.status, j.manna, j.hops, j.finished_at, j.data, pl.name FROM journeys j LEFT JOIN players pl ON pl.id = j.player_id WHERE j.date = ? AND j.kind = 'daily' AND j.status != 'playing' AND (j.scribe = 0 OR j.player_id = ?) LIMIT 20000",
-      date, p.id,
-    );
-    const list = rows.map((r) => {
-      const j = JSON.parse(r.data) as Journey;
-      return { id: r.player_id, name: r.name ?? `Guest ${r.player_id.slice(0, 4).toUpperCase()}`, won: r.status === 'won', manna: r.manna, oil: Math.max(0, j.oil), hops: r.hops, at: r.finished_at ?? 0, tiers: j.path.map((h) => h.tier) };
-    });
-    list.sort((a, b) => Number(b.won) - Number(a.won) || b.manna - a.manna || b.oil - a.oil || a.hops - b.hops || a.at - b.at);
-    const winners = list.filter((x) => x.won).map((x) => x.manna);
-    // bins of a round width that cover the winners in at most 10 bars
-    const bins: StandingsView['bins'] = [];
-    if (winners.length) {
-      const lo = Math.min(...winners), hi = Math.max(...winners);
-      const width = Math.max(5, Math.ceil((hi - lo + 1) / 10 / 5) * 5);
-      const start = Math.floor(lo / width) * width;
-      for (let from = start; from <= hi; from += width) bins.push({ from, to: from + width - 1, count: 0 });
-      for (const m of winners) bins[Math.floor((m - start) / width)].count++;
-    }
+    const { list, playing } = this.ranked(date, p);
+    const scores = list.map((x) => x.score);
+    const n = scores.length;
+    const mean = n ? scores.reduce((a, b) => a + b, 0) / n : 0;
+    const sd = n ? Math.sqrt(scores.reduce((a, b) => a + (b - mean) ** 2, 0) / n) : 0;
+    const sorted = [...scores].sort((a, b) => a - b);
+    const sample = sorted.length <= 600 ? sorted : Array.from({ length: 600 }, (_, i) => sorted[Math.floor((i * (sorted.length - 1)) / 599)]);
     const mineAt = list.findIndex((x) => x.id === p.id);
-    const row = (x: (typeof list)[number], i: number): StandingRow => ({ rank: i + 1, name: x.name, manna: x.manna, hops: x.hops, oil: x.oil, won: x.won, tiers: x.tiers, you: x.id === p.id });
+    const row = (x: Ranked, i: number): StandingRow => ({ rank: i + 1, name: x.name, guest: x.guest, manna: x.manna, hops: x.hops, oil: x.oil, won: x.won, tiers: x.tiers, you: x.id === p.id });
     const top = list.slice(0, 10).map(row);
     if (mineAt >= 10) top.push(row(list[mineAt], mineAt));
     const me = mineAt >= 0 ? list[mineAt] : null;
     return {
       date,
       puzzleNo: this.puzzleNo(date),
-      players: list.length,
-      won: winners.length,
-      bins,
-      lost: list.length - winners.length,
-      you: me ? {
-        rank: mineAt + 1,
-        of: list.length,
-        better: list.length > 1 ? Math.round((100 * (list.length - 1 - mineAt)) / (list.length - 1)) : 100,
-        manna: me.manna,
-        won: me.won,
-        bin: me.won && bins.length ? bins.findIndex((b) => me.manna >= b.from && me.manna <= b.to) : -1,
-      } : null,
+      players: n,
+      playing,
+      won: list.filter((x) => x.won).length,
+      lost: list.filter((x) => !x.won).length,
+      mean: Math.round(mean * 10) / 10,
+      sd: Math.round(sd * 10) / 10,
+      scores: sample,
+      you: me ? { rank: mineAt + 1, of: n, better: n > 1 ? Math.round((100 * (n - 1 - mineAt)) / (n - 1)) : 100, score: me.score, won: me.won } : null,
       top,
+      at: this.now(),
     };
   }
 

@@ -827,3 +827,24 @@ input[type='range'] { accent-color: var(--brown); width: 8rem; }
 .bc-stats span { font-size: 0.66rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; opacity: 0.85; }
 .bc-close { position: relative; margin-top: 1.1rem; width: 100%; background: rgba(255, 250, 240, 0.95); color: var(--ink); box-shadow: 0 4px 0 rgba(0, 0, 0, 0.25); }
 .bc-close:hover { background: #fff; }
+
+/* the live bell curve */
+.st-live { display: flex; align-items: center; gap: 0.45rem; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: #a3271c; margin-bottom: 0.4rem; }
+.live-dot { width: 0.55rem; height: 0.55rem; border-radius: 50%; background: #c8352a; box-shadow: 0 0 0 0 rgba(200, 53, 42, 0.5); animation: live 2s ease-out infinite; }
+@keyframes live { 70% { box-shadow: 0 0 0 7px rgba(200, 53, 42, 0); } 100% { box-shadow: 0 0 0 0 rgba(200, 53, 42, 0); } }
+.st-count { margin-left: auto; letter-spacing: 0.02em; text-transform: none; font-weight: 600; color: var(--ink-3); transition: color 0.3s; }
+.st-count.flash { color: var(--gold); }
+.bell { display: block; width: 100%; height: auto; margin-top: 0.4rem; overflow: visible; }
+.bell-rug line { stroke: #8f6c3b; stroke-opacity: 0.45; stroke-width: 1.5; }
+.bell-tick { font: 600 13px var(--font-ui); fill: var(--ink-3); }
+.bell-you-label { font: 700 14px var(--font-ui); fill: #ffe7a3; }
+.bell-you line, .bell-you circle, .bell-you g { transition: transform 0.5s var(--ease-out); }
+.st-axis { margin-top: 0.3rem !important; }
+.st-name em { font-style: normal; color: var(--ink-3); font-weight: 500; }
+.st-guest { margin-left: 0.4rem; padding: 0.05rem 0.4rem; border-radius: 999px; font-size: 0.62rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-3); background: rgba(110, 67, 50, 0.1); vertical-align: 0.1em; }
+[data-motion='reduced'] .live-dot { animation: none; }
+.st-list { grid-template-columns: minmax(0, 1fr); }
+.st-list li { min-width: 0; }
+.st-name { display: flex; align-items: center; gap: 0.35rem; }
+.st-name > :first-child { overflow: hidden; text-overflow: ellipsis; }
+.st-guest { margin-left: 0; flex: none; }

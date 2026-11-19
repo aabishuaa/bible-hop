@@ -355,9 +355,26 @@ describe('standings', () => {
     await loser.act('grace', { use: false });
     const s = await loser.get<import('../shared/types.ts').StandingsView>(`/api/standings?date=${day}`);
     expect(s.players).toBeGreaterThanOrEqual(1);
-    expect(s.you).toMatchObject({ won: false, bin: -1 });
+    expect(s.you).toMatchObject({ won: false, score: 0 });
     expect(s.lost).toBeGreaterThanOrEqual(1);
-    expect(s.top.find((r) => r.you)!.won).toBe(false);
+    const mine = s.top.find((r) => r.you)!;
+    expect(mine.won).toBe(false);
+    expect(mine.guest).toBe(true);
+    expect(mine.name).toMatch(/^[A-Z][a-z]+ [A-Z][a-z ]+ \d\d$/);
+    // another guest finishes and wins: the board shows them, by their guest name, to everyone
+    const winner = new Browser();
+    await winner.start();
+    const wj = game.loadJourney(winner.journey.id)!;
+    Object.assign(wj, { status: 'won', manna: 80, finishedAt: game.now() });
+    game.saveJourney(wj);
+    at('2026-11-21T18:00:10Z'); // past the few seconds the board is cached for
+    const after = await loser.get<import('../shared/types.ts').StandingsView>(`/api/standings?date=${day}`);
+    expect(after.players).toBe(s.players + 1);
+    expect(after.top[0].won).toBe(true);
+    expect(after.top[0].guest).toBe(true);
+    expect(after.you!.rank).toBeGreaterThan(1);
+    expect(after.mean).toBeGreaterThan(0);
+    expect(after.scores.length).toBe(after.players);
   });
 });
 

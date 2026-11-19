@@ -342,6 +342,8 @@ export interface ApiError {
 export interface StandingRow {
   rank: number;
   name: string;
+  /** Playing without an account. Guests show on the board like everyone else. */
+  guest: boolean;
   manna: number;
   hops: number;
   oil: number;
@@ -350,15 +352,26 @@ export interface StandingRow {
   you: boolean;
 }
 
-/** How a day's finished journeys rank (won first, then manna, then oil left, then fewer hops). */
+/**
+ * The day's standings. Finished journeys rank by making it home, then manna, then oil left, then
+ * fewer hops. The score on the curve is the manna brought home: a journey that did not make it home
+ * scores 0, because its manna spoiled.
+ */
 export interface StandingsView {
   date: string;
   puzzleNo: number;
+  /** Finished journeys, and journeys still under way. */
   players: number;
+  playing: number;
   won: number;
-  /** Manna of the journeys that made it home, in bins. */
-  bins: { from: number; to: number; count: number }[];
   lost: number;
-  you: { rank: number; of: number; better: number; manna: number; won: boolean; bin: number } | null;
+  /** The normal curve fitted to the scores. */
+  mean: number;
+  sd: number;
+  /** Every score (or an even sample of them, when there are very many), lowest first. */
+  scores: number[];
+  you: { rank: number; of: number; better: number; score: number; won: boolean } | null;
   top: StandingRow[];
+  /** When this was worked out (server time), for the live board. */
+  at: number;
 }
