@@ -1,8 +1,6 @@
-// Today (rule 14.1), staged as a scene: a Bible in a beam of light on the desk, the day's verse,
-// and everything else a step behind. The scene tilts toward the pointer (or the tilted phone).
-// Tapping the Bible opens it and riffles through to the day's journey.
-import { useEffect, useMemo, useRef, useState } from 'react';
-import type React from 'react';
+// Today (rule 14.1): a 3D Bible on the desk, the day's verse, and the way in.
+// The screen holds still; tapping the Bible flips through it, just for the fun of it.
+import { useMemo, useRef, useState } from 'react';
 import type { TodayView, Wording } from '../../../shared/types.ts';
 import { api } from '../api.ts';
 import { useApp } from '../app-store.ts';
@@ -21,47 +19,16 @@ import { useNow } from './journey/parts.tsx';
 const pretty = (s: string) => s.replace(/'/g, '\u2019');
 const DIMS: BookDims = { W: 118, H: 160, D: 12, B: 3, ov: 3 };
 const BOOK_BOX = { w: 250, h: 230 };
-const REST = 'translateY(0px) rotateX(-12deg) rotateY(32deg) rotateZ(-3deg) scale(1)';
-
-/** The scene leans toward the pointer, or toward the way a phone is tilted. */
-function useTilt(ref: React.RefObject<HTMLElement | null>) {
-  useEffect(() => {
-    const el = ref.current;
-    if (!el || isReducedMotion()) return;
-    const set = (x: number, y: number) => {
-      el.style.setProperty('--tx', (x * 6).toFixed(2));
-      el.style.setProperty('--ty', (-y * 5).toFixed(2));
-    };
-    const onMove = (e: PointerEvent) => {
-      if (e.pointerType !== 'mouse') return;
-      set((e.clientX / window.innerWidth) * 2 - 1, (e.clientY / window.innerHeight) * 2 - 1);
-    };
-    let base: number | null = null;
-    const onTilt = (e: DeviceOrientationEvent) => {
-      if (e.gamma === null || e.beta === null) return;
-      base ??= e.beta;
-      set(Math.max(-1, Math.min(1, e.gamma / 30)), Math.max(-1, Math.min(1, (e.beta - base) / 30)));
-    };
-    window.addEventListener('pointermove', onMove);
-    window.addEventListener('deviceorientation', onTilt);
-    return () => {
-      window.removeEventListener('pointermove', onMove);
-      window.removeEventListener('deviceorientation', onTilt);
-    };
-  }, [ref]);
-}
+const REST = 'translate(0px, 0px) rotateX(-12deg) rotateY(32deg) rotateZ(-3deg) scale(1)';
 
 export function TodayScreen({ today, clockSkew }: { today: TodayView; clockSkew: number }) {
   useDocumentTitle('');
   const setToday = useApp((s) => s.setToday);
   const toast = useApp((s) => s.toast);
   const [wording, setWording] = useState<Wording>(today.player.wording);
-  const [opening, setOpening] = useState(false);
+  const playing = useRef(false);
   const now = useNow(1000) + clockSkew;
-  const scene = useRef<HTMLDivElement>(null);
   const bookBox = useRef<HTMLButtonElement>(null);
-  const veil = useRef<HTMLDivElement>(null);
-  useTilt(scene);
   const home = today.home;
   const shown: Wording = home?.wordings[wording] ? wording : home?.wordings.kjv ? 'kjv' : 'web';
   const text = home ? (home.wordings[shown] ?? []).map((t) => pretty(t.s)).join('') : '';
@@ -84,65 +51,73 @@ export function TodayScreen({ today, clockSkew }: { today: TodayView; clockSkew:
     void api.settings({ wording: w }).then((r) => setToday({ ...today, player: r.player })).catch(() => undefined);
   };
 
-  /** Open the Bible, riffle the pages, and dive into the day. */
-  const flipThrough = async () => {
-    if (opening) return;
+  /** Something to play with: the Bible turns to you, opens, riffles its pages, closes and settles back. */
+  const flipThrough = () => {
     press();
-    if (!home) return;
-    const box = bookBox.current, root = box?.querySelector<HTMLElement>('.b3d');
-    if (!box || !root || isReducedMotion() || finished) return navigate(dest);
-    setOpening(true);
-    const anims: Animation[] = [];
-    const go = (el: Element | null, kf: Keyframe[], o: KeyframeAnimationOptions) => {
-      if (!el) return;
-      const a = el.animate(kf, { fill: 'both', ...o });
-      anims.push(a);
-      return a;
-    };
-    // face the reader, open, riffle, then come close
-    go(root, [
-      { transform: REST },
-      { transform: 'translateY(10px) rotateX(18deg) rotateY(0deg) rotateZ(0deg) scale(1.15)', offset: 0.18 },
-      { transform: 'translateY(10px) rotateX(18deg) rotateY(0deg) rotateZ(0deg) scale(1.15)', offset: 0.78 },
-      { transform: 'translateY(40px) rotateX(0deg) rotateY(0deg) rotateZ(0deg) scale(5)' },
-    ], { duration: 2600, easing: 'cubic-bezier(.45,0,.25,1)' });
-    go(root.querySelector('.b3d-left'), [{ transform: 'rotateY(0deg)' }, { transform: 'rotateY(-180deg)' }], { duration: 700, delay: 420, easing: 'cubic-bezier(.5,.02,.18,1)' });
-    go(root.querySelector('.b3d-spine'), [{ opacity: 1 }, { opacity: 0 }], { duration: 300, delay: 520 });
-    root.querySelectorAll('.b3d-leaf').forEach((leaf, i) => {
-      go(leaf, [{ transform: 'rotateY(0deg)' }, { transform: 'rotateY(-180deg)' }], { duration: 360, delay: 1100 + i * 110, easing: 'cubic-bezier(.4,0,.2,1)' });
+    const root = bookBox.current?.querySelector<HTMLElement>('.b3d');
+    if (!root || playing.current || isReducedMotion()) return;
+    playing.current = true;
+    const T = 3500;
+    const at = (ms: number) => Math.min(1, ms / T);
+    const opts: KeyframeAnimationOptions = { duration: T, easing: 'linear' };
+    // open, the spine sits in the middle, so the book shifts right by half a page
+    const FACE = `translate(${DIMS.W / 2}px, 6px) rotateX(16deg) rotateY(0deg) rotateZ(0deg) scale(1.08)`;
+    const ease = 'cubic-bezier(.45,0,.25,1)';
+    const done = root.animate([
+      { transform: REST, offset: 0, easing: ease },
+      { transform: FACE, offset: at(450) },
+      { transform: FACE, offset: at(3200), easing: ease },
+      { transform: REST, offset: 1 },
+    ], opts);
+    root.querySelector('.b3d-left')?.animate([
+      { transform: 'rotateY(0deg)', offset: 0 },
+      { transform: 'rotateY(0deg)', offset: at(380), easing: 'cubic-bezier(.5,.02,.18,1)' },
+      { transform: 'rotateY(-180deg)', offset: at(1050) },
+      { transform: 'rotateY(-180deg)', offset: at(2720), easing: 'cubic-bezier(.6,0,.4,1)' },
+      { transform: 'rotateY(0deg)', offset: at(3200) },
+      { transform: 'rotateY(0deg)', offset: 1 },
+    ], opts);
+    root.querySelector('.b3d-spine')?.animate([{ opacity: 1, offset: 0 }, { opacity: 1, offset: at(450) }, { opacity: 0, offset: at(700) }, { opacity: 0, offset: at(3050) }, { opacity: 1, offset: at(3200) }, { opacity: 1, offset: 1 }], opts);
+    const leaves = [...root.querySelectorAll('.b3d-leaf')];
+    leaves.forEach((leaf, i) => {
+      const go = 1050 + i * 110, back = 2150 + (leaves.length - 1 - i) * 45;
+      leaf.animate([
+        { transform: 'rotateY(0deg)', offset: 0 },
+        { transform: 'rotateY(0deg)', offset: at(go), easing: 'cubic-bezier(.4,0,.2,1)' },
+        { transform: 'rotateY(-180deg)', offset: at(go + 360) },
+        { transform: 'rotateY(-180deg)', offset: at(back), easing: 'cubic-bezier(.4,0,.2,1)' },
+        { transform: 'rotateY(0deg)', offset: at(back + 280) },
+        { transform: 'rotateY(0deg)', offset: 1 },
+      ], opts);
       window.setTimeout(() => {
         sound.flip('loaf', 1);
         haptics.play(7);
-      }, 1100 + i * 110);
+      }, go);
     });
+    window.setTimeout(() => sound.flip('fish', -1), 2150);
     window.setTimeout(() => {
       sound.cover();
       haptics.play([16]);
-    }, 400);
-    const fade = go(veil.current, [{ opacity: 0 }, { opacity: 1 }], { duration: 420, delay: 2250, easing: 'ease-in' });
-    await fade?.finished.catch(() => undefined);
-    // the journey opens straight onto the verse: the Bible has already been opened here
-    try {
-      sessionStorage.setItem('bible-hopping.skipCover', '1');
-    } catch {
-      /* fine */
-    }
-    navigate(dest);
+    }, 380);
+    window.setTimeout(() => {
+      sound.land('crumb');
+      haptics.play([14]);
+    }, 3180);
+    done.finished.finally(() => {
+      playing.current = false;
+    });
   };
 
   return (
     <div className="today paper-surface">
       <TornCorner corner="tl" seed={21} />
       <TornCorner corner="br" seed={34} />
-      <div className="today-beam" aria-hidden="true">
-        {Array.from({ length: 18 }, (_, i) => <i key={i} style={{ left: `${(i * 41) % 100}%`, animationDelay: `${(i * 0.7) % 9}s`, animationDuration: `${7 + (i % 5)}s` }} />)}
-      </div>
-      <Sparkle size={18} style={{ position: 'absolute', left: '6%', top: '19%', zIndex: 2 }} />
-      <Sparkle size={14} style={{ position: 'absolute', right: '8%', top: '31%', zIndex: 2, animationDelay: '1.2s' }} className="on-paper" />
-      <Sparkle size={16} style={{ position: 'absolute', right: '12%', bottom: '9%', zIndex: 2, animationDelay: '0.6s' }} />
+      <Sparkle size={18} twinkle={false} style={{ position: 'absolute', left: '6%', top: '19%', zIndex: 2 }} />
+      <Sparkle size={14} twinkle={false} style={{ position: 'absolute', right: '8%', top: '31%', zIndex: 2 }} className="on-paper" />
+      <Sparkle size={16} twinkle={false} style={{ position: 'absolute', right: '12%', bottom: '9%', zIndex: 2 }} />
       <Ornament size={34} style={{ position: 'absolute', left: '5%', bottom: '8%', zIndex: 2, opacity: 0.85 }} />
-      <div className="today-scene" ref={scene}>
-        <div className="today-inner today-tilt">
+      <div className="today-scene">
+        <div className="today-inner">
           <div className="today-top">
             <DotsDeco style={{ color: 'var(--white)' }} />
             <span style={{ display: 'flex', gap: '0.1rem' }}>
@@ -161,10 +136,10 @@ export function TodayScreen({ today, clockSkew }: { today: TodayView; clockSkew:
           <div className="today-hero">
             <div className="hero-stage z3">
               <div className="hero-halo" aria-hidden="true" />
-              <button ref={bookBox} className={`mini-bible ${opening ? 'opening' : ''}`} style={{ width: BOOK_BOX.w, height: BOOK_BOX.h }} onClick={flipThrough} aria-label={finished ? 'See your trip home' : started ? 'Continue your journey' : "Open today\u2019s Bible"}>
-                <Book3D dims={DIMS} tex={tex} style={{ left: (BOOK_BOX.w - DIMS.W) / 2, top: (BOOK_BOX.h - DIMS.H) / 2 - 6, transformOrigin: `${DIMS.W / 2}px ${DIMS.H / 2}px ${DIMS.D}px` }} className={opening ? '' : 'floating'} />
+              <button ref={bookBox} className="mini-bible" style={{ width: BOOK_BOX.w, height: BOOK_BOX.h }} onClick={flipThrough} aria-label="Flip through the Bible">
+                <Book3D dims={DIMS} tex={tex} style={{ left: (BOOK_BOX.w - DIMS.W) / 2, top: (BOOK_BOX.h - DIMS.H) / 2 - 6, transformOrigin: `${DIMS.W / 2}px ${DIMS.H / 2}px ${DIMS.D}px`, transform: REST }} />
               </button>
-              {!opening && <span className="tap-hint">{finished ? 'See your trip' : started ? 'Tap to continue' : 'Tap to open'}</span>}
+              <span className="tap-hint">Tap to flip through</span>
             </div>
             <div className="z2">
               <p className="eyebrow">A daily leap of faith</p>
@@ -230,7 +205,7 @@ export function TodayScreen({ today, clockSkew }: { today: TodayView; clockSkew:
               </>
             ) : (
               <>
-                <button className="btn big gold" disabled={!home} onClick={flipThrough}>
+                <button className="btn big gold" disabled={!home} onClick={() => { press(); navigate(dest); }}>
                   <Icon name={started ? 'hop' : 'book'} size="1.2rem" strokeWidth={2.2} />
                   {started ? `Continue \u00b7 ${j.manna} manna` : p.firstTime ? 'Take your first hop' : "Start today\u2019s journey"}
                   <span className="chev"><Icon name="hop" size="1rem" strokeWidth={2.4} /></span>
@@ -273,7 +248,6 @@ export function TodayScreen({ today, clockSkew }: { today: TodayView; clockSkew:
           </div>
         </div>
       </div>
-      <div ref={veil} className="flip-veil" aria-hidden="true" />
     </div>
   );
 }

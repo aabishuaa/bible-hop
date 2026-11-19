@@ -794,3 +794,9 @@ input[type='range'] { accent-color: var(--brown); width: 8rem; }
 @media (max-width: 26rem) { .st-tiers { display: none; } }
 .hero-stage { margin-bottom: 0.9rem; }
 .tap-hint { margin-top: -0.7rem; }
+
+/* the home screen holds still: only the Bible moves, and only when tapped */
+.today .foil, .today .hero-halo, .today .tap-hint, .today .badge-shelf .medal::after { animation: none !important; }
+.today .foil { background-position: 30% 0; }
+.today .z1, .today .z2, .today .z3 { transform: none; }
+.today .mini-bible::after { animation: none; }
