@@ -360,3 +360,30 @@ describe('standings', () => {
     expect(s.top.find((r) => r.you)!.won).toBe(false);
   });
 });
+
+describe('badges are earned again on later days', () => {
+  it('Streets of Gold counts twice after two days with a Golden Nugget, once per journey', async () => {
+    const b = new Browser();
+    for (const day of ['2026-11-23T18:00:00Z', '2026-11-24T18:00:00Z']) {
+      at(day);
+      await b.start();
+      const j = game.loadJourney(b.journey.id)!;
+      j.current = verseId('Genesis 2:12'); // stand where a nugget is
+      game.saveJourney(j);
+      b.journey = (await b.get<{ journey: JourneyView }>(`/api/journey/${j.id}`)).journey;
+      const r = await b.hop('bdellium', 'Numbers 11:7', false);
+      expect(r.hop!.tier).toBe('nugget');
+      const home = await b.act('golden');
+      expect(home.kind).toBe('home');
+      expect(home.finale!.achievements.find((a) => a.id === 'gold')).toBeDefined();
+    }
+    const h = await b.get<HistoryView>('/api/history?tz=America/Chicago');
+    const gold = h.badges.find((x) => x.id === 'gold')!;
+    expect(gold.count).toBe(2);
+    expect(gold.firstOn).toBe('2026-11-23');
+    expect(gold.earnedOn).toBe('2026-11-24');
+    // the finale of an earlier day still lists the badge it earned
+    const f = await b.get<FinaleView>('/api/finale?date=2026-11-23');
+    expect(f.achievements.some((a) => a.id === 'gold')).toBe(true);
+  });
+});

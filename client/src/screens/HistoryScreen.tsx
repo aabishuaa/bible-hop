@@ -57,22 +57,9 @@ export function HistoryScreen() {
               {months.map((ym) => (
                 <Month key={ym} ym={ym} byDate={byDate} today={today} launch={h.launchDate} />
               ))}
-              {h.allAchievements.length > 0 && (
-                <>
-                  <h2 className="display">Achievements</h2>
-                  <div className="badge-row">
-                    {h.allAchievements.map((a) => {
-                      const got = h.achievements.find((x) => x.id === a.id);
-                      return (
-                        <div key={a.id} className={`badge ${got ? 'earned' : ''}`}>
-                          <span className="medal"><Icon name={got ? 'sparkle' : 'ribbon'} /></span>
-                          <span><b>{a.name}</b><span>{a.how}{a.cite ? ` · ${a.cite}` : ''}{got ? ` · earned ${got.earnedOn}` : ''}</span></span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </>
-              )}
+              <div className="actions" style={{ marginTop: '1.4rem' }}>
+                <button className="btn ghost" onClick={() => { press(); navigate('/achievements'); }}><Icon name="medal" size="1rem" /> Badges and milestones</button>
+              </div>
             </>
           )}
         </div>

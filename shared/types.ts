@@ -215,6 +215,9 @@ export interface Achievement {
   /** One of the badges shown on the home screen. */
   badge?: boolean;
   icon?: string;
+  /** For a badge: how many times it has been earned, and the first and latest dates. */
+  count?: number;
+  firstOn?: string;
   name: string;
   how: string;
   cite?: string;
@@ -297,8 +300,6 @@ export interface TodayView {
   yesterday: DayResult | null;
   player: PlayerView;
   announcements: { id: number; title: string; body: string }[];
-  /** The badges, each with the date it was earned (if it was). */
-  badges: Achievement[];
   notes: { id: number; text: string; at: number }[];
   features: { berean: boolean; sundaySchool: boolean; revelation: boolean; achievements: boolean; wordingSwitch: boolean; aiCheck: boolean };
   books: BookSpan[];
@@ -310,6 +311,8 @@ export interface HistoryView {
   launchDate: string;
   achievements: Achievement[];
   allAchievements: Achievement[];
+  /** Every badge, with how many times it has been earned. */
+  badges: Achievement[];
 }
 
 export interface RevelationView {

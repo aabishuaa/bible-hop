@@ -466,9 +466,16 @@ export class Game {
     const finishedBefore = this.db.get<{ n: number }>("SELECT COUNT(*) AS n FROM journeys WHERE player_id = ? AND kind = 'daily' AND status != 'playing' AND id != ?", p.id, j.id)!.n;
     const fresh: Achievement[] = [];
     for (const id of earned(w, j, streak, finishedBefore === 0)) {
-      const r = this.db.run('INSERT OR IGNORE INTO achievements (player_id, id, earned_on) VALUES (?, ?, ?)', p.id, id, j.date);
       const a = ACHIEVEMENTS.find((x) => x.id === id);
-      if (r.changes && a) fresh.push({ ...a, earnedOn: j.date });
+      if (!a) continue;
+      if (a.badge) {
+        // a badge can be earned again on another day, but only once per journey
+        const r = this.db.run('INSERT OR IGNORE INTO badge_awards (journey_id, id, player_id, date) VALUES (?, ?, ?, ?)', j.id, id, p.id, j.date);
+        if (r.changes) fresh.push({ ...a, earnedOn: j.date, count: this.badgeCount(p.id, id) });
+        continue;
+      }
+      const r = this.db.run('INSERT OR IGNORE INTO achievements (player_id, id, earned_on) VALUES (?, ?, ?)', p.id, id, j.date);
+      if (r.changes) fresh.push({ ...a, earnedOn: j.date });
     }
     void at;
     return fresh;
@@ -523,17 +530,23 @@ export class Game {
       yesterday: this.dayResult(p, addDays(date, -1)),
       player: this.playerView(p, date),
       announcements: active,
-      badges: this.badgesOf(p.id),
       notes,
       features: { berean: r['feature.berean'], sundaySchool: r['feature.sundaySchool'], revelation: r['feature.revelation'], achievements: r['feature.achievements'], wordingSwitch: r['feature.wordingSwitch'], aiCheck: r['feature.aiCheck'] && this.ai.ready },
       books: bookSpans(this.bible),
     };
   }
 
-  /** The home screen's badges, each with the date it was earned. */
+  /** Every badge, with how many times the player has earned it and when. */
   badgesOf(playerId: string): Achievement[] {
-    const mine = new Map(this.db.all<{ id: string; earned_on: string }>('SELECT id, earned_on FROM achievements WHERE player_id = ?', playerId).map((r) => [r.id, r.earned_on]));
-    return ACHIEVEMENTS.filter((a) => a.badge).map((a) => ({ ...a, earnedOn: mine.get(a.id) }));
+    const rows = new Map(this.db.all<{ id: string; n: number; first: string; last: string }>('SELECT id, COUNT(*) AS n, MIN(date) AS first, MAX(date) AS last FROM badge_awards WHERE player_id = ? GROUP BY id', playerId).map((r) => [r.id, r]));
+    return ACHIEVEMENTS.filter((a) => a.badge).map((a) => {
+      const r = rows.get(a.id);
+      return r ? { ...a, count: r.n, firstOn: r.first, earnedOn: r.last } : { ...a, count: 0 };
+    });
+  }
+
+  badgeCount(playerId: string, id: string): number {
+    return this.db.get<{ n: number }>('SELECT COUNT(*) AS n FROM badge_awards WHERE player_id = ? AND id = ?', playerId, id)!.n;
   }
 
   /**
@@ -770,7 +783,13 @@ export class Game {
     if (!j || j.playerId !== p.id) throw new GameError('not_found', 'There is no journey for that day.', 404);
     if (j.status === 'playing') throw new GameError('not_finished', 'That journey is still under way.');
     const mine = this.db.all<{ id: string; earned_on: string }>('SELECT id, earned_on FROM achievements WHERE player_id = ? AND earned_on = ?', p.id, j.date);
-    const fresh = j.kind === 'daily' ? mine.map((m) => ({ ...ACHIEVEMENTS.find((a) => a.id === m.id)!, earnedOn: m.earned_on })).filter((a) => a.id) : [];
+    const badges = this.db.all<{ id: string }>('SELECT id FROM badge_awards WHERE journey_id = ?', j.id);
+    const fresh = j.kind === 'daily'
+      ? [
+          ...badges.map((b) => ({ ...ACHIEVEMENTS.find((a) => a.id === b.id)!, earnedOn: j.date, count: this.badgeCount(p.id, b.id) })),
+          ...mine.map((m) => ({ ...ACHIEVEMENTS.find((a) => a.id === m.id)!, earnedOn: m.earned_on })),
+        ].filter((a) => a.id)
+      : [];
     return this.buildFinale(j, this.playerById(p.id)!, fresh);
   }
 
@@ -794,7 +813,8 @@ export class Game {
       player: this.playerView(p, today),
       launchDate: this.launchDate,
       achievements: mine.map((m) => ({ ...ACHIEVEMENTS.find((a) => a.id === m.id)!, earnedOn: m.earned_on })).filter((a) => a.id),
-      allAchievements: this.worldFor(today).rules['feature.achievements'] ? ACHIEVEMENTS : [],
+      allAchievements: this.worldFor(today).rules['feature.achievements'] ? ACHIEVEMENTS.filter((a) => !a.badge) : [],
+      badges: this.worldFor(today).rules['feature.achievements'] ? this.badgesOf(p.id) : [],
     };
   }
 
@@ -980,6 +1000,7 @@ export class Game {
         }
         this.db.run('UPDATE OR IGNORE achievements SET player_id = ? WHERE player_id = ?', account.id, guest.id);
         this.db.run('DELETE FROM achievements WHERE player_id = ?', guest.id);
+        this.db.run('UPDATE badge_awards SET player_id = ? WHERE player_id = ?', account.id, guest.id);
         this.db.run('DELETE FROM sessions WHERE player_id = ?', guest.id);
         this.db.run('DELETE FROM players WHERE id = ?', guest.id);
       });
@@ -992,7 +1013,7 @@ export class Game {
   /** Rule 19.11: honor deletion requests. Removes the player and everything typed by them. */
   deletePlayer(playerId: string): void {
     this.db.tx(() => {
-      for (const table of ['journeys', 'sessions', 'achievements', 'notes', 'disputes']) this.db.run(`DELETE FROM ${table} WHERE player_id = ?`, playerId);
+      for (const table of ['journeys', 'sessions', 'achievements', 'badge_awards', 'notes', 'disputes']) this.db.run(`DELETE FROM ${table} WHERE player_id = ?`, playerId);
       this.db.run('UPDATE ai_calls SET player_id = NULL, typed = NULL WHERE player_id = ?', playerId);
       this.db.run('UPDATE events SET player_id = NULL WHERE player_id = ?', playerId);
       this.db.run('DELETE FROM players WHERE id = ?', playerId);

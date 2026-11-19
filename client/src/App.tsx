@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect, useRef } from 'react';
 import { useApp } from './app-store.ts';
 import { usePath } from './router.ts';
 import { PaperCanvas } from './ui/base.tsx';
+import { AchievementsScreen } from './screens/AchievementsScreen.tsx';
 import { FinaleScreen } from './screens/FinaleScreen.tsx';
 import { HistoryScreen } from './screens/HistoryScreen.tsx';
 import { HowToPlay } from './screens/HowToPlay.tsx';
@@ -78,6 +79,7 @@ export function App() {
   else if (route === '/practice') screen = <PracticeScreen clockSkew={skew.current} />;
   else if (route.startsWith('/finale')) screen = <FinaleScreen date={route.split('/')[2] || undefined} />;
   else if (route === '/history') screen = <HistoryScreen />;
+  else if (route === '/achievements') screen = <AchievementsScreen />;
   else if (route === '/settings') screen = <SettingsScreen today={today} />;
   else if (route === '/how') screen = <HowToPlay />;
   else if (route.startsWith('/standings/')) screen = <StandingsScreen date={route.split('/')[2]} />;

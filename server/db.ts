@@ -204,6 +204,14 @@ CREATE TABLE IF NOT EXISTS achievements (
   earned_on TEXT NOT NULL,
   PRIMARY KEY (player_id, id)
 );
+CREATE TABLE IF NOT EXISTS badge_awards (
+  journey_id TEXT NOT NULL,
+  id TEXT NOT NULL,
+  player_id TEXT NOT NULL,
+  date TEXT NOT NULL,
+  PRIMARY KEY (journey_id, id)
+);
+CREATE INDEX IF NOT EXISTS badge_awards_player ON badge_awards(player_id, id);
 CREATE TABLE IF NOT EXISTS alerts (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   at INTEGER NOT NULL,

@@ -54,7 +54,7 @@ export function HomeCelebration({ finale, onDone }: { finale: FinaleView; onDone
         <div className="hc-manna"><Icon name="manna" size={30} /> <span className="tabular">{total}</span> <small>manna</small></div>
         {finale.calf > 0 && <p className="hc-sub">The Fatted Calf adds {finale.calf}{finale.path[finale.path.length - 1]?.how === 'golden' ? ' by the Golden Road' : ''}</p>}
         {finale.achievements.filter((a) => a.badge).map((a) => (
-          <div key={a.id} className="hc-badge"><Icon name={a.icon ?? 'sparkle'} size={20} /> New badge: <b>{a.name}</b></div>
+          <div key={a.id} className="hc-badge"><Icon name={a.icon ?? 'sparkle'} size={20} /> {(a.count ?? 1) > 1 ? 'Badge earned again:' : 'New badge:'} <b>{a.name}</b>{(a.count ?? 1) > 1 ? ` \u00d7${a.count}` : ''}</div>
         ))}
       </div>
     </div>

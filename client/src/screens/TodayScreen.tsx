@@ -10,7 +10,6 @@ import { sound } from '../fx/sound.ts';
 import { isReducedMotion } from '../prefs.ts';
 import { navigate } from '../router.ts';
 import { DotsDeco, Ornament, Sparkle, TornCorner, niceDate, press, timeLeft, useDocumentTitle } from '../ui/base.tsx';
-import { BadgeShelf } from '../ui/Badges.tsx';
 import { Book3D } from '../ui/Book3D.tsx';
 import type { BookDims } from '../ui/Book3D.tsx';
 import { Icon, TierBadge } from '../ui/icons.tsx';
@@ -24,7 +23,6 @@ const REST = 'translate(0px, 0px) rotateX(-12deg) rotateY(32deg) rotateZ(-3deg) 
 export function TodayScreen({ today, clockSkew }: { today: TodayView; clockSkew: number }) {
   useDocumentTitle('');
   const setToday = useApp((s) => s.setToday);
-  const toast = useApp((s) => s.toast);
   const [wording, setWording] = useState<Wording>(today.player.wording);
   const playing = useRef(false);
   const now = useNow(1000) + clockSkew;
@@ -234,14 +232,9 @@ export function TodayScreen({ today, clockSkew }: { today: TodayView; clockSkew:
             </button>
           </div>
 
-          {today.features.achievements && today.badges.length > 0 && (
-            <div className="z1">
-              <BadgeShelf badges={today.badges} onPick={(b) => { press(); toast(`${b.name}: ${b.how}${b.earnedOn ? ' (earned)' : ''}`); }} />
-            </div>
-          )}
-
           <div className="links">
             <button className="btn small ghost" onClick={() => { press(); navigate(`/standings/${today.date}`); }}><Icon name="trophy" size="1rem" /> Standings</button>
+            {today.features.achievements && <button className="btn small ghost" onClick={() => { press(); navigate('/achievements'); }}><Icon name="medal" size="1rem" /> Badges</button>}
             <button className="btn small ghost" onClick={() => { press(); navigate('/how'); }}><Icon name="book" size="1rem" /> How to play</button>
             {today.features.sundaySchool && <button className="btn small ghost" onClick={() => { press(); navigate('/practice'); }}><Icon name="lens" size="1rem" /> Sunday School</button>}
             {today.features.revelation && today.puzzleNo > 1 && <button className="btn small ghost" onClick={() => { press(); navigate(`/revelation/${today.yesterday?.date ?? today.date}`); }}><Icon name="sparkle" size="1rem" /> Revelation</button>}

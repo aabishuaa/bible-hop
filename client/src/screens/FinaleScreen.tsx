@@ -4,14 +4,14 @@ import { useEffect, useMemo, useState } from 'react';
 import { DIVISIONS } from '../../../shared/books.ts';
 import type { Tier } from '../../../shared/rules.ts';
 import { TIER_NAMES } from '../../../shared/rules.ts';
-import type { BookSpan, FinaleView, HopRecord } from '../../../shared/types.ts';
+import type { Achievement, BookSpan, FinaleView, HopRecord } from '../../../shared/types.ts';
 import { api } from '../api.ts';
 import { useApp } from '../app-store.ts';
 import { sound } from '../fx/sound.ts';
 import { isReducedMotion } from '../prefs.ts';
 import { navigate } from '../router.ts';
 import { TIER_COLOR } from '../theme.ts';
-import { Medal } from '../ui/Badges.tsx';
+import { BadgeCard, Medal } from '../ui/Badges.tsx';
 import { Standings } from '../ui/Standings.tsx';
 import { DotsDeco, LinesDeco, PaperCanvas, Torn, plural, press, useDocumentTitle } from '../ui/base.tsx';
 import { Icon, TierBadge } from '../ui/icons.tsx';
@@ -56,6 +56,7 @@ function Shell({ title, children }: { title: string; children: React.ReactNode }
 }
 
 function Finale({ f }: { f: FinaleView }) {
+  const [badge, setBadge] = useState<Achievement | null>(null);
   const books = useApp((s) => s.today?.books ?? []);
   const toast = useApp((s) => s.toast);
   const today = useApp((s) => s.today);
@@ -146,7 +147,7 @@ function Finale({ f }: { f: FinaleView }) {
 
       {f.achievements.length > 0 && (
         <div className="finale-badges">
-          {f.achievements.map((a) => a.badge ? <Medal key={a.id} a={a} size={72} /> : (
+          {f.achievements.map((a) => a.badge ? <Medal key={a.id} a={a} size={72} onClick={() => { press(); setBadge(a); }} /> : (
             <div key={a.id} className="badge earned">
               <span className="medal-small"><Icon name="sparkle" /></span>
               <span><b>{a.name}</b><span>{a.how}{a.cite ? ` \u00b7 ${a.cite}` : ''}</span></span>
@@ -178,6 +179,7 @@ function Finale({ f }: { f: FinaleView }) {
         {practice && <button className="btn" onClick={() => { press(); navigate('/practice'); }}>Practise again</button>}
         <button className="btn ghost" onClick={() => { press(); navigate('/'); }}><Icon name="lookback" size="1rem" /> Back to today</button>
       </div>
+      <BadgeCard a={badge} onClose={() => setBadge(null)} />
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '2rem' }}>
         <DotsDeco />
         <LinesDeco />
