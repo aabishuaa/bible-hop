@@ -1036,3 +1036,72 @@ button.glass:focus-visible { outline: 3px solid var(--fish); outline-offset: 3px
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.95), 0 10px 26px rgba(66, 40, 12, 0.14);
 }
 .sheet-page .stat { background: linear-gradient(150deg, rgba(255, 253, 247, 0.82), rgba(255, 245, 226, 0.66)); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); border-color: rgba(255, 255, 255, 0.75); }
+
+/* ================================================================ the wordmark */
+.logo { --ink-logo: #3b1f12; --deep: #241008; display: inline-grid; justify-items: center; line-height: 1; position: relative; }
+button.logo { all: unset; cursor: pointer; display: inline-grid; justify-items: center; -webkit-tap-highlight-color: transparent; }
+button.logo:focus-visible { outline: 3px solid var(--fish); outline-offset: 6px; border-radius: 12px; }
+.logo-bible { font-family: var(--font-display); font-style: italic; font-weight: 600; color: #8c3418; letter-spacing: 0.01em; transform: rotate(-4deg); position: relative; z-index: 2; text-shadow: 0 1px 0 rgba(255, 248, 230, 0.9); }
+.logo-hop { display: inline-flex; align-items: flex-end; font-family: 'Fraunces Variable', var(--font-display); font-weight: 900; font-variation-settings: 'SOFT' 100; color: var(--ink-logo); letter-spacing: -0.015em; }
+.lh { display: inline-block; transform-origin: 50% 100%;
+  text-shadow: 0 1px 0 var(--deep), 0 2px 0 var(--deep), 0 3px 0 var(--deep), 0 4px 0 var(--deep), 0 5px 0 var(--deep), 0 9px 12px rgba(40, 18, 4, 0.35); }
+.lo { position: relative; width: 0.8em; height: 0.72em; margin: 0 0.02em 0.19em; }
+
+/* the ball */
+.logo-ball { position: absolute; inset: 0; display: block; }
+.ball-body { position: absolute; left: 0.04em; right: 0.04em; top: -0.13em; height: 0.72em; border-radius: 50%; transform-origin: 50% 100%;
+  background: radial-gradient(circle at 34% 30%, #ffe3d2 0%, #ff8a5c 18%, #e3542a 46%, #b7310f 74%, #6e1904 100%);
+  box-shadow: inset -0.06em -0.08em 0.12em rgba(70, 8, 0, 0.55), inset 0.03em 0.04em 0.06em rgba(255, 220, 200, 0.4), 0 0.05em 0.02em rgba(40, 8, 0, 0.35); }
+.ball-body i { position: absolute; left: 22%; top: 14%; width: 30%; height: 20%; border-radius: 50%; background: rgba(255, 255, 255, 0.85); filter: blur(0.02em); transform: rotate(-30deg); }
+.ball-shadow { position: absolute; left: 12%; right: 12%; bottom: -0.07em; height: 0.09em; border-radius: 50%; background: radial-gradient(closest-side, rgba(40, 14, 2, 0.55), transparent); transform-origin: 50% 50%; }
+
+/* the wave on arrival (and on tap) */
+.logo-hop.wave .lh { animation: lh-wave 0.62s cubic-bezier(0.3, 0.6, 0.3, 1) both; animation-delay: calc(var(--i) * 70ms + 150ms); }
+.logo-hop.wave .lo { animation: none; }
+.logo-hop.wave .lo .ball-body { animation: ball-big 0.95s cubic-bezier(0.3, 0.6, 0.3, 1) 190ms both; }
+.logo-hop.wave .lo .ball-shadow { animation: shadow-big 0.95s cubic-bezier(0.3, 0.6, 0.3, 1) 190ms both; }
+@keyframes lh-wave {
+  0% { transform: none; }
+  30% { transform: translateY(-0.2em) scale(0.96, 1.05); }
+  58% { transform: translateY(0) scale(1.08, 0.88); }
+  76% { transform: translateY(-0.03em) scale(0.98, 1.03); }
+  100% { transform: none; } }
+@keyframes ball-big {
+  0% { transform: none; }
+  12% { transform: scale(1.14, 0.84); }
+  46% { transform: translateY(-0.62em) scale(0.92, 1.1); }
+  78% { transform: translateY(0) scale(1.22, 0.78); }
+  88% { transform: translateY(-0.05em) scale(0.96, 1.05); }
+  100% { transform: none; } }
+@keyframes shadow-big { 0%, 12%, 100% { transform: none; opacity: 1; } 46% { transform: scale(0.45); opacity: 0.35; } 78% { transform: scale(1.15); opacity: 1; } }
+
+/* afterwards only the O hops, now and then */
+.logo.hero .ball-body.idle, .logo.hero .idle .ball-body { animation: ball-idle 5.5s cubic-bezier(0.3, 0.6, 0.3, 1) 2.6s infinite; }
+.logo.hero .idle .ball-shadow { animation: shadow-idle 5.5s cubic-bezier(0.3, 0.6, 0.3, 1) 2.6s infinite; }
+.logo-hop.wave .idle .ball-body { animation: ball-big 0.95s cubic-bezier(0.3, 0.6, 0.3, 1) 190ms both, ball-idle 5.5s cubic-bezier(0.3, 0.6, 0.3, 1) 3s infinite; }
+.logo-hop.wave .idle .ball-shadow { animation: shadow-big 0.95s cubic-bezier(0.3, 0.6, 0.3, 1) 190ms both, shadow-idle 5.5s cubic-bezier(0.3, 0.6, 0.3, 1) 3s infinite; }
+@keyframes ball-idle {
+  0% { transform: none; }
+  2% { transform: scale(1.1, 0.88); }
+  7% { transform: translateY(-0.34em) scale(0.95, 1.06); }
+  12% { transform: translateY(0) scale(1.14, 0.84); }
+  15% { transform: scale(0.97, 1.03); }
+  18%, 100% { transform: none; } }
+@keyframes shadow-idle { 0%, 2%, 18%, 100% { transform: none; opacity: 1; } 7% { transform: scale(0.6); opacity: 0.5; } 12% { transform: scale(1.1); } }
+
+.logo-tag { margin-top: 0.9rem; font-family: var(--font-ui); font-size: 0.68rem; font-weight: 600; letter-spacing: 0.36em; text-transform: uppercase; color: var(--brown); }
+
+/* sizes */
+.logo.hero .logo-hop { font-size: clamp(3.5rem, 17.5vw, 5.8rem); }
+.logo.hero .logo-bible { font-size: clamp(1.9rem, 9vw, 3rem); margin-bottom: -0.62em; margin-left: -1.9em; }
+.logo.hero .logo-tag { margin-top: 0.55rem; }
+.home2-logo { margin: 0.1rem 0 0; font: inherit; }
+.logo.mini { --ink-logo: #fffaf0; --deep: rgba(50, 24, 6, 0.75); display: inline-flex; align-items: flex-end; gap: 0.3rem; }
+.logo.mini .logo-bible { font-size: 1.05rem; color: #ffe9c7; transform: rotate(-4deg) translateY(-0.12em); text-shadow: 0 1px 2px rgba(50, 24, 6, 0.6); }
+.logo.mini .logo-hop { font-size: 1.12rem; }
+.topbar .title:has(.logo.mini) { overflow: visible; display: flex; align-items: flex-end; gap: 0.35rem; }
+@media (max-width: 26rem) { .logo.mini .logo-bible { display: none; } .topbar .seg button { padding: 0.3rem 0.6rem; } }
+.logo.mini .lh { text-shadow: 0 1px 0 var(--deep), 0 2px 0 var(--deep), 0 3px 4px rgba(30, 14, 2, 0.4); }
+.logo.mini .lo.jump .ball-body { animation: ball-big 0.8s cubic-bezier(0.3, 0.6, 0.3, 1) 0.15s both; }
+.logo.mini .lo.jump .ball-shadow { animation: shadow-big 0.8s cubic-bezier(0.3, 0.6, 0.3, 1) 0.15s both; }
+[data-motion='reduced'] .logo .ball-body, [data-motion='reduced'] .logo .ball-shadow, [data-motion='reduced'] .logo .lh { animation: none !important; }

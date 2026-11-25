@@ -11,6 +11,7 @@ import { useApp } from '../../app-store.ts';
 import { burst } from '../../fx/burst.ts';
 import { flipStage } from '../../fx/flip.ts';
 import { Cover } from './Cover.tsx';
+import { Logo } from '../../ui/Logo.tsx';
 import { HomeCelebration, NuggetFlash } from './Celebrations.tsx';
 import type { FlipPlan } from '../../fx/flip.ts';
 import { haptics } from '../../fx/haptics.ts';
@@ -410,8 +411,7 @@ export function JourneyScreen({ initial, clockSkew, coach, onFinale, onExit }: J
             <Icon name="book" size="1.35rem" />
           </button>
           <div className="title">
-            {j.kind === 'practice' ? 'Sunday School' : j.kind === 'guide' ? 'Your first hop' : 'Bible Hopping'}
-            <small>{j.kind === 'daily' ? `#${j.puzzleNo}` : ''}</small>
+            {j.kind === 'daily' ? <><Logo size="mini" hopKey={j.hops} /><small>#{j.puzzleNo}</small></> : j.kind === 'practice' ? 'Sunday School' : 'Your first hop'}
           </div>
           {wide && (
             <div className="seg pages-seg" role="group" aria-label="Page view">

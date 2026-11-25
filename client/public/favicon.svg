@@ -1,8 +1,22 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <rect width="64" height="64" rx="14" fill="#a9834f"/>
-  <path d="M8 18c8-3 16-2 24 3v30c-8-5-16-6-24-3z" fill="#fbeed6"/>
-  <path d="M56 18c-8-3-16-2-24 3v30c8-5 16-6 24-3z" fill="#f4e2bf"/>
-  <path d="M15 40c4-13 14-17 22-9" fill="none" stroke="#6e4332" stroke-width="3" stroke-linecap="round"/>
-  <path d="M37 31l1.5-7 4.5 5.5z" fill="#6e4332"/>
-  <circle cx="15" cy="40" r="3.2" fill="#c8962e"/>
+  <defs>
+    <radialGradient id="b" cx="0.34" cy="0.3" r="0.75">
+      <stop offset="0" stop-color="#ffe3d2"/>
+      <stop offset="0.2" stop-color="#ff8a5c"/>
+      <stop offset="0.5" stop-color="#e3542a"/>
+      <stop offset="0.8" stop-color="#b7310f"/>
+      <stop offset="1" stop-color="#6e1904"/>
+    </radialGradient>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fff6e2"/>
+      <stop offset="1" stop-color="#f1dcb2"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="15" fill="url(#bg)"/>
+  <path d="M9 47c7.5-2.6 15-2 23 1.6 8-3.6 15.5-4.2 23-1.6v5c-7.5-2.6-15-2-23 1.6-8-3.6-15.5-4.2-23-1.6z" fill="#3b1f12"/>
+  <path d="M32 48.6v5" stroke="#f1dcb2" stroke-width="1.4"/>
+  <path d="M12 41c4-14 14-21 26-17" fill="none" stroke="#8c3418" stroke-width="2.4" stroke-linecap="round" stroke-dasharray="0.1 5.2"/>
+  <ellipse cx="44" cy="45" rx="7" ry="1.6" fill="#3b1f12" opacity="0.35"/>
+  <circle cx="44" cy="27" r="10.5" fill="url(#b)"/>
+  <ellipse cx="40.6" cy="22.6" rx="3.3" ry="2.1" fill="#fff" opacity="0.85" transform="rotate(-30 40.6 22.6)"/>
 </svg>

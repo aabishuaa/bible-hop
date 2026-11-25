@@ -13,6 +13,7 @@ import { Ornament, niceDate, press, timeLeft, useDocumentTitle } from '../ui/bas
 import { Book3D } from '../ui/Book3D.tsx';
 import type { BookDims } from '../ui/Book3D.tsx';
 import { Icon } from '../ui/icons.tsx';
+import { Logo } from '../ui/Logo.tsx';
 import { useNow } from './journey/parts.tsx';
 
 const DIMS: BookDims = { W: 136, H: 184, D: 14, B: 3.5, ov: 3.5 };
@@ -125,11 +126,7 @@ export function TodayScreen({ today, clockSkew }: { today: TodayView; clockSkew:
           <button ref={bookBox} className="mini-bible" style={{ width: BOOK_BOX.w, height: BOOK_BOX.h }} onClick={flipThrough} aria-label="Flip through the Bible">
             <Book3D dims={DIMS} tex={tex} style={{ left: (BOOK_BOX.w - DIMS.W) / 2, top: (BOOK_BOX.h - DIMS.H) / 2 - 6, transformOrigin: `${DIMS.W / 2}px ${DIMS.H / 2}px ${DIMS.D}px`, transform: REST }} />
           </button>
-          <p className="home2-eyebrow">A daily leap of faith</p>
-          <h1 className="home2-title">
-            <span className="t1">Bible</span>
-            <span className="t2">Hopping</span>
-          </h1>
+          <h1 className="home2-logo"><Logo tagline="A daily leap of faith" /></h1>
         </section>
 
         {today.notes.length > 0 && (
