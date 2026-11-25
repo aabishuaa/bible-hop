@@ -14,11 +14,12 @@ import './styles/app.css';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './App.tsx';
-import { kraftTile } from './fx/paper.ts';
+import { grainUrl, kraftTile } from './fx/paper.ts';
 import { sound } from './fx/sound.ts';
 import './prefs.ts';
 
 document.documentElement.style.setProperty('--kraft-tile', `url(${kraftTile()})`);
+document.documentElement.style.setProperty('--grain', `url(${grainUrl()})`);
 
 // Sound can only begin from a touch or a key press; the first one anywhere wakes it.
 for (const ev of ['pointerdown', 'keydown', 'touchend']) document.addEventListener(ev, () => sound.unlock(), { passive: true });

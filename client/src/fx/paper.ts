@@ -17,35 +17,37 @@ export function rng(seed: number): () => number {
 
 const cache = new Map<string, string>();
 
-/** A tile of kraft paper: flecks and short fibres on warm brown. */
+/** A tile of kraft paper: flecks and short fibres on warm brown. The tile is large and its
+ *  blotches faint, so the repeat can't be picked out even on a wide screen. */
 export function kraftTile(): string {
   const hit = cache.get('kraft');
   if (hit) return hit;
-  const s = 320;
+  const s = 512;
   const c = document.createElement('canvas');
   c.width = c.height = s;
   const g = c.getContext('2d')!;
   g.fillStyle = '#ad8650';
   g.fillRect(0, 0, s, s);
   const r = rng(7);
-  for (let i = 0; i < 26; i++) {
-    const x = r() * s, y = r() * s, rad = 40 + r() * 110;
-    for (const [dx, dy] of [[0, 0], [s, 0], [-s, 0], [0, s], [0, -s]]) {
+  for (let i = 0; i < 40; i++) {
+    const x = r() * s, y = r() * s, rad = 30 + r() * 80;
+    const dark = r() > 0.5;
+    const a = 0.025 + r() * 0.02;
+    for (const [dx, dy] of [[0, 0], [s, 0], [-s, 0], [0, s], [0, -s], [s, s], [-s, -s], [s, -s], [-s, s]]) {
       const grad = g.createRadialGradient(x + dx, y + dy, 0, x + dx, y + dy, rad);
-      const dark = r() > 0.5;
-      grad.addColorStop(0, dark ? 'rgba(96,64,24,0.10)' : 'rgba(226,190,130,0.10)');
+      grad.addColorStop(0, dark ? `rgba(96,64,24,${a})` : `rgba(226,190,130,${a})`);
       grad.addColorStop(1, 'rgba(0,0,0,0)');
       g.fillStyle = grad;
       g.fillRect(0, 0, s, s);
     }
   }
-  for (let i = 0; i < 2600; i++) {
+  for (let i = 0; i < 6600; i++) {
     const x = r() * s, y = r() * s;
     g.fillStyle = r() > 0.5 ? `rgba(70,45,15,${0.05 + r() * 0.12})` : `rgba(240,210,160,${0.05 + r() * 0.12})`;
     g.fillRect(x, y, 1 + r() * 1.2, 1 + r() * 1.2);
   }
   g.lineCap = 'round';
-  for (let i = 0; i < 150; i++) {
+  for (let i = 0; i < 380; i++) {
     const x = r() * s, y = r() * s, a = r() * Math.PI, len = 4 + r() * 16;
     g.strokeStyle = r() > 0.45 ? `rgba(80,52,20,${0.06 + r() * 0.1})` : `rgba(235,205,150,${0.06 + r() * 0.1})`;
     g.lineWidth = 0.5 + r() * 0.7;
@@ -56,6 +58,30 @@ export function kraftTile(): string {
   }
   const url = c.toDataURL('image/png');
   cache.set('kraft', url);
+  return url;
+}
+
+/** Fine, even film grain (no blotches, so it has no pattern to repeat), laid over the leather. */
+export function grainUrl(): string {
+  const hit = cache.get('grain');
+  if (hit) return hit;
+  const s = 256;
+  const c = document.createElement('canvas');
+  c.width = c.height = s;
+  const g = c.getContext('2d')!;
+  const img = g.createImageData(s, s);
+  const r = rng(23);
+  for (let i = 0; i < s * s; i++) {
+    const v = r();
+    const light = v > 0.5;
+    img.data[i * 4] = light ? 255 : 20;
+    img.data[i * 4 + 1] = light ? 236 : 8;
+    img.data[i * 4 + 2] = light ? 200 : 0;
+    img.data[i * 4 + 3] = Math.floor(Math.abs(v - 0.5) * 2 * 19);
+  }
+  g.putImageData(img, 0, 0);
+  const url = c.toDataURL('image/png');
+  cache.set('grain', url);
   return url;
 }
 

@@ -1,4 +1,4 @@
-// Today (rule 14.1): a 3D Bible on the desk, the day's verse, and the way in.
+// Today (rule 14.1): the title screen. A 3D Bible on dark leather, the wordmark, and the way in.
 // The screen holds still; tapping the Bible flips through it, just for the fun of it.
 import { useMemo, useRef, useState } from 'react';
 import type { TodayView } from '../../../shared/types.ts';
@@ -102,17 +102,22 @@ export function TodayScreen({ today, clockSkew }: { today: TodayView; clockSkew:
     : started ? `On your way \u00b7 ${j.hops} ${j.hops === 1 ? 'hop' : 'hops'} \u00b7 ${j.manna} manna`
     : 'A new verse is waiting for you';
   const dayLeft = Math.max(0, Math.min(1, left / 86_400_000));
-  const tiles: { icon: string; label: string; sub: string; tone: string; go: () => void; show: boolean }[] = [
-    { icon: 'trophy', label: 'Standings', sub: 'Live board', tone: 'gold', go: () => navigate(`/standings/${today.date}`), show: true },
+  const dock: { icon: string; label: string; sub: string; tone: string; go: () => void; show: boolean }[] = [
+    { icon: 'trophy', label: 'Standings', sub: 'The live board', tone: 'gold', go: () => navigate(`/standings/${today.date}`), show: true },
     { icon: 'medal', label: 'Badges', sub: 'Your medals', tone: 'crimson', go: () => navigate('/achievements'), show: today.features.achievements },
-    { icon: 'lens', label: 'Sunday School', sub: 'Practice any verse', tone: 'fish', go: () => navigate('/practice'), show: today.features.sundaySchool },
-    { icon: 'book', label: 'How to play', sub: 'The rules', tone: 'loaf', go: () => navigate('/how'), show: true },
+    { icon: 'lens', label: 'Practice', sub: 'Sunday School: practise on any verse', tone: 'fish', go: () => navigate('/practice'), show: today.features.sundaySchool },
+    { icon: 'book', label: 'Rules', sub: 'How to play', tone: 'loaf', go: () => navigate('/how'), show: true },
     { icon: 'sparkle', label: 'Revelation', sub: "Yesterday\u2019s results", tone: 'pearl', go: () => navigate(`/revelation/${today.yesterday?.date ?? today.date}`), show: today.features.revelation && today.puzzleNo > 1 },
   ];
+  const openYesterday = () => {
+    press();
+    if (today.yesterday?.status === 'won' || today.yesterday?.status === 'lost') navigate(`/finale/${today.yesterday.date}`);
+    else navigate('/history');
+  };
 
   return (
     <div className="home2">
-      <div className="home2-bg" aria-hidden="true" />
+      <div className="home2-bg" aria-hidden="true"><span className="home2-frame" /></div>
       <div className="home2-inner">
         <header className="home2-top">
           <span className="home2-mark" aria-hidden="true"><Ornament size={30} /></span>
@@ -122,6 +127,7 @@ export function TodayScreen({ today, clockSkew }: { today: TodayView; clockSkew:
           </nav>
         </header>
 
+        <main className="home2-main">
         <section className="home2-hero">
           <button ref={bookBox} className="mini-bible" style={{ width: BOOK_BOX.w, height: BOOK_BOX.h }} onClick={flipThrough} aria-label="Flip through the Bible">
             <Book3D dims={DIMS} tex={tex} style={{ left: (BOOK_BOX.w - DIMS.W) / 2, top: (BOOK_BOX.h - DIMS.H) / 2 - 6, transformOrigin: `${DIMS.W / 2}px ${DIMS.H / 2}px ${DIMS.D}px`, transform: REST }} />
@@ -129,8 +135,9 @@ export function TodayScreen({ today, clockSkew }: { today: TodayView; clockSkew:
           <h1 className="home2-logo"><Logo tagline="A daily leap of faith" /></h1>
         </section>
 
+        <div className="home2-side">
         {today.notes.length > 0 && (
-          <div className="glass notice2" role="status">
+          <div className="smoke notice2" role="status">
             <Icon name="dove" />
             <span>
               {today.notes.map((n) => <span key={n.id} style={{ display: 'block' }}>{n.text}</span>)}
@@ -139,31 +146,28 @@ export function TodayScreen({ today, clockSkew }: { today: TodayView; clockSkew:
           </div>
         )}
         {today.announcements.map((a) => (
-          <div key={a.id} className="glass notice2">
+          <div key={a.id} className="smoke notice2">
             <Icon name="sparkle" />
             <span><b>{a.title}</b> {a.body}</span>
           </div>
         ))}
 
-        <section className="glass play-card">
-          <div className="pc-head">
-            <span className="pc-no">#{today.puzzleNo}</span>
-            <span className="pc-date">{niceDate(today.date)}</span>
-          </div>
-          <p className="pc-status">{status}</p>
+        <section className="home2-play">
+          <p className="hp-day"><span className="hp-no">No. {today.puzzleNo}</span><span className="hp-date">{niceDate(today.date)}</span></p>
+          <p className="hp-status">{status}</p>
           {finished ? (
-            <button className="btn big gold pc-cta" onClick={() => { press(); navigate(`/finale/${today.date}`); }}>
-              <Icon name={j.status === 'won' ? 'home' : 'moon'} size="1.25rem" strokeWidth={2.2} />
+            <button className="btn big hp-cta" onClick={() => { press(); navigate(`/finale/${today.date}`); }}>
+              <Icon name={j.status === 'won' ? 'home' : 'moon'} size="1.3rem" strokeWidth={2.2} />
               {j.status === 'won' ? 'See your trip home' : 'See how the day ended'}
             </button>
           ) : (
-            <button className="btn big gold pc-cta" disabled={!home} onClick={() => { press(); navigate(dest); }}>
-              <Icon name={started ? 'hop' : 'book'} size="1.25rem" strokeWidth={2.2} />
+            <button className="btn big hp-cta" disabled={!home} onClick={() => { press(); navigate(dest); }}>
+              <Icon name={started ? 'hop' : 'book'} size="1.3rem" strokeWidth={2.2} />
               {started ? 'Continue your journey' : p.firstTime ? 'Take your first hop' : "Start today\u2019s journey"}
             </button>
           )}
-          <div className={`pc-clock ${late ? 'late' : ''}`}>
-            <svg viewBox="0 0 36 36" className="pc-ring" aria-hidden="true">
+          <div className={`hp-clock ${late ? 'late' : ''}`}>
+            <svg viewBox="0 0 36 36" className="hp-ring" aria-hidden="true">
               <circle cx="18" cy="18" r="15" className="track" />
               <circle cx="18" cy="18" r="15" className="fill" strokeDasharray={`${(dayLeft * 94.25).toFixed(2)} 94.25`} />
             </svg>
@@ -171,36 +175,34 @@ export function TodayScreen({ today, clockSkew }: { today: TodayView; clockSkew:
               {finished ? <>Next verse in <b>{timeLeft(left)}</b></> : late ? <>The door shuts in <b>{timeLeft(left)}</b></> : <><b>{timeLeft(left)}</b> until midnight</>}
             </span>
           </div>
-          {p.firstTime && !started && <button className="pc-skip" onClick={() => { press(); navigate('/play'); }}>Skip the guide</button>}
+          {p.firstTime && !started && <button className="hp-skip" onClick={() => { press(); navigate('/play'); }}>Skip the guide</button>}
         </section>
 
-        <section className="home2-stats">
-          <button className="glass stat2" onClick={() => { press(); navigate('/history'); }} aria-label={`Streak: ${p.streak} days. Open history.`}>
-            <span className="orb tone-loaf"><Icon name="streak" /></span>
-            <b className="tabular">{p.streak}</b>
-            <span>Streak</span>
+        <section className="smoke home2-stats">
+          <button className="hs" onClick={() => { press(); navigate('/history'); }} aria-label={`Streak: ${p.streak} days. Open history.`}>
+            <b className="tabular"><span className="orb tone-loaf"><Icon name="streak" /></span>{p.streak}</b>
+            <span>Day streak</span>
           </button>
-          <button className="glass stat2" onClick={() => { press(); navigate('/history'); }} aria-label={`Treasure in Heaven: ${p.treasure}. Open history.`}>
-            <span className="orb tone-gold"><Icon name="treasure" /></span>
-            <b className="tabular">{p.treasure.toLocaleString()}</b>
+          <button className="hs" onClick={() => { press(); navigate('/history'); }} aria-label={`Treasure in Heaven: ${p.treasure}. Open history.`}>
+            <b className="tabular"><span className="orb tone-gold"><Icon name="treasure" /></span>{p.treasure.toLocaleString()}</b>
             <span>Treasure</span>
           </button>
-          <button className="glass stat2" onClick={() => { press(); if (today.yesterday?.status === 'won' || today.yesterday?.status === 'lost') navigate(`/finale/${today.yesterday.date}`); else navigate('/history'); }} aria-label={`Yesterday: ${yesterdayText(today)}. Open.`}>
-            <span className="orb tone-fish"><Icon name={today.yesterday?.status === 'won' ? 'home' : 'moon'} /></span>
-            <b className="tabular">{today.yesterday?.status === 'won' ? today.yesterday.manna : '\u2014'}</b>
+          <button className="hs" onClick={openYesterday} aria-label={`Yesterday: ${yesterdayText(today)}. Open.`}>
+            <b className="tabular"><span className="orb tone-fish"><Icon name={today.yesterday?.status === 'won' ? 'home' : 'moon'} /></span>{today.yesterday?.status === 'won' ? today.yesterday.manna : '\u2014'}</b>
             <span>Yesterday</span>
           </button>
         </section>
 
-        <section className="home2-tiles">
-          {tiles.filter((t) => t.show).map((t) => (
-            <button key={t.label} className="glass tile2" onClick={() => { press(); t.go(); }}>
+        <nav className="home2-dock" aria-label="More">
+          {dock.filter((t) => t.show).map((t) => (
+            <button key={t.label} className="dock-item" onClick={() => { press(); t.go(); }} aria-label={`${t.label}: ${t.sub}`}>
               <span className={`orb tone-${t.tone}`}><Icon name={t.icon} /></span>
-              <span className="tile2-text"><b>{t.label}</b><small>{t.sub}</small></span>
-              <Icon name="hop" className="tile2-go" size="1rem" strokeWidth={2.2} />
+              <span className="dock-label">{t.label}</span>
             </button>
           ))}
-        </section>
+        </nav>
+        </div>
+        </main>
       </div>
     </div>
   );
