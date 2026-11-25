@@ -1,7 +1,6 @@
 import { lazy, Suspense, useEffect, useRef } from 'react';
 import { useApp } from './app-store.ts';
 import { usePath } from './router.ts';
-import { PaperCanvas } from './ui/base.tsx';
 import { AchievementsScreen } from './screens/AchievementsScreen.tsx';
 import { FinaleScreen } from './screens/FinaleScreen.tsx';
 import { HistoryScreen } from './screens/HistoryScreen.tsx';
@@ -17,9 +16,8 @@ const Desk = lazy(() => import('./desk/Desk.tsx'));
 
 function Loading({ text }: { text: string }) {
   return (
-    <div className="screen paper-surface" style={{ alignItems: 'center', justifyContent: 'center', padding: '2rem', textAlign: 'center' }}>
-      <PaperCanvas seed={2} />
-      <p className="display" style={{ fontSize: '1.6rem', fontStyle: 'italic', color: 'var(--brown)' }}>{text}</p>
+    <div className="screen leather" style={{ alignItems: 'center', justifyContent: 'center', padding: '2rem', textAlign: 'center' }}>
+      <p className="display" style={{ fontSize: '1.6rem', fontStyle: 'italic', color: 'var(--gilt)' }}>{text}</p>
     </div>
   );
 }

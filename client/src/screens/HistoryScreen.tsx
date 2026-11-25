@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import type { DayResult, HistoryView } from '../../../shared/types.ts';
 import { api } from '../api.ts';
 import { navigate } from '../router.ts';
-import { PaperCanvas, Torn, press, useDocumentTitle } from '../ui/base.tsx';
+import { press, useDocumentTitle } from '../ui/base.tsx';
 import { Icon } from '../ui/icons.tsx';
 
 const DOW = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
@@ -35,15 +35,14 @@ export function HistoryScreen() {
   const first = h?.days[h.days.length - 1]?.date ?? today;
   const months = useMemo(() => monthsBetween(first.slice(0, 7) + '-01', today), [first, today]);
   return (
-    <div className="screen kraft">
-      <Torn side="bottom" depth={14} seed={51} className="band-top">
+    <div className="screen leather">
+      <header className="bar bar-top">
         <div className="topbar">
           <button className="icon-btn" onClick={() => { press(); navigate('/'); }} aria-label="Back to today"><Icon name="lookback" size="1.3rem" /></button>
           <div className="title">History</div>
         </div>
-      </Torn>
-      <div className="page-wrap paper-surface">
-        <PaperCanvas seed={8} />
+      </header>
+      <div className="page-wrap">
         <div className="sheet-page">
           {err && <p className="lead">{err}</p>}
           {h && (

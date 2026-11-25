@@ -4,7 +4,7 @@ import type { FinaleView, JourneyView } from '../../../shared/types.ts';
 import { ApiError, api } from '../api.ts';
 import { useApp } from '../app-store.ts';
 import { navigate } from '../router.ts';
-import { PaperCanvas, Torn, press, useDocumentTitle } from '../ui/base.tsx';
+import { press, useDocumentTitle } from '../ui/base.tsx';
 import { Icon } from '../ui/icons.tsx';
 import { setLastFinale } from './FinaleScreen.tsx';
 import { JourneyScreen } from './journey/JourneyScreen.tsx';
@@ -49,15 +49,14 @@ export function PracticeScreen({ clockSkew }: { clockSkew: number }) {
   }
 
   return (
-    <div className="screen kraft">
-      <Torn side="bottom" depth={14} seed={81} className="band-top">
+    <div className="screen leather">
+      <header className="bar bar-top">
         <div className="topbar">
           <button className="icon-btn" onClick={() => { press(); navigate('/'); }} aria-label="Back to today"><Icon name="lookback" size="1.3rem" /></button>
           <div className="title">Sunday School</div>
         </div>
-      </Torn>
-      <div className="page-wrap paper-surface">
-        <PaperCanvas seed={14} />
+      </header>
+      <div className="page-wrap">
         <div className="sheet-page">
           <p className="eyebrow">Practice</p>
           <h1 className="display" style={{ marginTop: '0.4rem' }}>Play <em>any</em> verse</h1>
@@ -73,7 +72,7 @@ export function PracticeScreen({ clockSkew }: { clockSkew: number }) {
             )}
             {err && <div className="msg-line warn" style={{ marginTop: '0.6rem' }}>{err}</div>}
             <div className="actions">
-              <button className="btn big" disabled={busy} onClick={() => void start()}>
+              <button className="btn big gold" disabled={busy} onClick={() => void start()}>
                 <Icon name="lens" size="1.1rem" /> {verse.trim() ? 'Start here' : 'Pick one for me'}
                 <span className="chev"><Icon name="hop" size="1rem" strokeWidth={2.4} /></span>
               </button>

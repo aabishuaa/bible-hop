@@ -1,20 +1,19 @@
 import { navigate } from '../router.ts';
-import { PaperCanvas, Torn, niceDate, press, useDocumentTitle } from '../ui/base.tsx';
+import { niceDate, press, useDocumentTitle } from '../ui/base.tsx';
 import { Icon } from '../ui/icons.tsx';
 import { Standings } from '../ui/Standings.tsx';
 
 export function StandingsScreen({ date }: { date: string }) {
   useDocumentTitle('Standings');
   return (
-    <div className="screen kraft">
-      <Torn side="bottom" depth={14} seed={95} className="band-top">
+    <div className="screen leather">
+      <header className="bar bar-top">
         <div className="topbar">
           <button className="icon-btn" onClick={() => { press(); navigate('/'); }} aria-label="Back to today"><Icon name="lookback" size="1.3rem" /></button>
           <div className="title">Standings</div>
         </div>
-      </Torn>
-      <div className="page-wrap paper-surface">
-        <PaperCanvas seed={18} />
+      </header>
+      <div className="page-wrap">
         <div className="sheet-page">
           <p className="eyebrow">{niceDate(date)}</p>
           <h1 className="display" style={{ marginTop: '0.4rem' }}>Where you <em>landed</em></h1>

@@ -4,7 +4,7 @@ import type { RevelationView } from '../../../shared/types.ts';
 import { ApiError, api } from '../api.ts';
 import { useApp } from '../app-store.ts';
 import { navigate } from '../router.ts';
-import { PaperCanvas, Torn, niceDate, press, useDocumentTitle } from '../ui/base.tsx';
+import { niceDate, press, useDocumentTitle } from '../ui/base.tsx';
 import { Icon, TierBadge } from '../ui/icons.tsx';
 import { TripMap } from './FinaleScreen.tsx';
 
@@ -18,15 +18,14 @@ export function RevelationScreen({ date }: { date: string }) {
   }, [date]);
   const route = r?.best?.route.slice(1).map((s, i) => ({ from: r.best!.route[i].position, to: s.position, tier: s.tier ?? 'loaf', home: !!s.home, revisit: !!s.revisit, door: s.door ?? '', fromRef: r.best!.route[i].ref, toRef: s.ref }));
   return (
-    <div className="screen kraft">
-      <Torn side="bottom" depth={14} seed={91} className="band-top">
+    <div className="screen leather">
+      <header className="bar bar-top">
         <div className="topbar">
           <button className="icon-btn" onClick={() => { press(); navigate('/'); }} aria-label="Back to today"><Icon name="lookback" size="1.3rem" /></button>
           <div className="title">Revelation</div>
         </div>
-      </Torn>
-      <div className="page-wrap paper-surface">
-        <PaperCanvas seed={16} />
+      </header>
+      <div className="page-wrap">
         <div className="sheet-page">
           <p className="eyebrow">{niceDate(date)}</p>
           {err && <><h1 className="display" style={{ marginTop: '0.4rem' }}>Not <em>yet</em></h1><p className="lead">{err}</p></>}

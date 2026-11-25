@@ -5,8 +5,8 @@ they share, gather manna, and get back home before your local midnight.
 
 The game is built from the **Bible Hopping Game Directive 1.0**: every rule, number, edge case and
 acceptance test in it is enforced on the server, and the directive's own tests run in the test suite.
-The look is the game's own: an open Bible of cream parchment and torn kraft paper, with the pages
-turning to each verse you hop to.
+The look is the game's own: a Bible bound in dark leather, with gilt stitching and ivory type, and
+scripture on cream paper inside. The pages turn to each verse you hop to.
 
 ---
 

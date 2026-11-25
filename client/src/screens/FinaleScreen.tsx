@@ -13,7 +13,7 @@ import { navigate } from '../router.ts';
 import { TIER_COLOR } from '../theme.ts';
 import { BadgeCard, Medal } from '../ui/Badges.tsx';
 import { Standings } from '../ui/Standings.tsx';
-import { DotsDeco, LinesDeco, PaperCanvas, Torn, plural, press, useDocumentTitle } from '../ui/base.tsx';
+import { DotsDeco, LinesDeco, plural, press, useDocumentTitle } from '../ui/base.tsx';
 import { Icon, TierBadge } from '../ui/icons.tsx';
 import { lossIcon } from './journey/modals.tsx';
 
@@ -40,15 +40,14 @@ export function FinaleScreen({ date }: { date?: string }) {
 
 function Shell({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="screen kraft">
-      <Torn side="bottom" depth={14} seed={41} className="band-top">
+    <div className="screen leather">
+      <header className="bar bar-top">
         <div className="topbar">
           <button className="icon-btn" onClick={() => { press(); navigate('/'); }} aria-label="Back to today"><Icon name="lookback" size="1.3rem" /></button>
           <div className="title">{title}</div>
         </div>
-      </Torn>
-      <div className="page-wrap paper-surface">
-        <PaperCanvas seed={12} />
+      </header>
+      <div className="page-wrap">
         <div className="sheet-page">{children}</div>
       </div>
     </div>

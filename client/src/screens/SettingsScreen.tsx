@@ -8,7 +8,7 @@ import { haptics } from '../fx/haptics.ts';
 import { sound } from '../fx/sound.ts';
 import { usePrefs } from '../prefs.ts';
 import { navigate } from '../router.ts';
-import { Modal, PaperCanvas, Torn, press, useDocumentTitle } from '../ui/base.tsx';
+import { Modal, press, useDocumentTitle } from '../ui/base.tsx';
 import { Icon } from '../ui/icons.tsx';
 
 export function SettingsScreen({ today }: { today: TodayView }) {
@@ -53,15 +53,14 @@ export function SettingsScreen({ today }: { today: TodayView }) {
   };
 
   return (
-    <div className="screen kraft">
-      <Torn side="bottom" depth={14} seed={61} className="band-top">
+    <div className="screen leather">
+      <header className="bar bar-top">
         <div className="topbar">
           <button className="icon-btn" onClick={() => { press(); navigate('/'); }} aria-label="Back to today"><Icon name="lookback" size="1.3rem" /></button>
           <div className="title">Settings</div>
         </div>
-      </Torn>
-      <div className="page-wrap paper-surface">
-        <PaperCanvas seed={9} />
+      </header>
+      <div className="page-wrap">
         <div className="sheet-page">
           <h2 className="display" style={{ marginTop: 0 }}>Reading</h2>
           <div className="card cream">

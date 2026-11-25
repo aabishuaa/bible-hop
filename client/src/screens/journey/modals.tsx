@@ -164,7 +164,7 @@ export function StatusModal({ open, j, onClose, onMode }: { open: boolean; j: Jo
         {j.deadline !== null && <StatusRow icon="clock" title={`The door shuts at midnight, ${j.tzLabel}`} text="Manna you haven&rsquo;t brought home by then is lost." />}
       </div>
       {j.canChangeMode && onMode && (
-        <div className="set-row" style={{ marginTop: '0.8rem', borderTop: '1.5px solid rgba(201,163,122,0.5)' }}>
+        <div className="set-row" style={{ marginTop: '0.8rem', borderTop: '1.5px solid var(--line)' }}>
           <div className="txt">
             <b>Berean Mode</b>
             <span>Harder: each word carries you only once today, and every hop needs its book and chapter. Choose before your first hop.</span>
@@ -193,7 +193,7 @@ function CheckMark() {
 function StatusRow({ icon, title, text }: { icon: string; title: string; text: string }) {
   return (
     <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
-      <span className="tier-badge" style={{ width: '2.2rem', height: '2.2rem', background: 'var(--brown)' }}><Icon name={icon} size="1.2rem" /></span>
+      <span className="tier-badge" style={{ width: '2.2rem', height: '2.2rem', background: 'radial-gradient(circle at 34% 28%, #f4d27e, #c8921f 62%, #7d5306)', color: '#3a2004' }}><Icon name={icon} size="1.2rem" /></span>
       <span>
         <b style={{ display: 'block' }}>{title}</b>
         <span className="small muted" dangerouslySetInnerHTML={{ __html: text }} />

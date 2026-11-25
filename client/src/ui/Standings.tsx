@@ -64,8 +64,8 @@ function BellCurve({ s }: { s: StandingsView }) {
     <svg className="bell" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={s.you ? `A bell curve of today's scores. You scored ${s.you.score}, better than ${s.you.better}% of players.` : "A bell curve of today's scores."}>
       <defs>
         <linearGradient id="bell-fill" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#c9a37a" stopOpacity="0.45" />
-          <stop offset="1" stopColor="#c9a37a" stopOpacity="0.08" />
+          <stop offset="0" stopColor="#f6e3c0" stopOpacity="0.26" />
+          <stop offset="1" stopColor="#f6e3c0" stopOpacity="0.03" />
         </linearGradient>
         <linearGradient id="bell-gold" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stopColor="#f2c94c" stopOpacity="0.9" />
@@ -79,21 +79,21 @@ function BellCurve({ s }: { s: StandingsView }) {
       </defs>
       <path d={area} fill="url(#bell-fill)" />
       {you !== null && <path d={area} fill="url(#bell-gold)" clipPath="url(#bell-beaten)" className="bell-beaten" />}
-      <path d={line} fill="none" stroke="#8f6c3b" strokeWidth="2.5" strokeLinejoin="round" />
+      <path d={line} fill="none" stroke="#e3bc6c" strokeWidth="2.5" strokeLinejoin="round" />
       {/* every player, as a tick on the baseline */}
       <g className="bell-rug">
         {s.scores.map((v, i) => <line key={i} x1={x(v)} x2={x(v)} y1={BASE + 3} y2={BASE + 10} />)}
       </g>
-      <line x1={PAD_L} x2={W - PAD_R} y1={BASE} y2={BASE} stroke="#c9a37a" strokeWidth="1.5" />
+      <line x1={PAD_L} x2={W - PAD_R} y1={BASE} y2={BASE} stroke="rgba(255,226,180,0.3)" strokeWidth="1.5" />
       {ticks.map((v) => (
         <text key={v} x={x(v)} y={BASE + 26} textAnchor={v === 0 ? 'start' : v === Math.round(hi) ? 'end' : 'middle'} className="bell-tick">{v === Math.round(s.mean) && v !== 0 ? `avg ${v}` : v}</text>
       ))}
       {you !== null && s.you && (
         <g className="bell-you">
-          <line x1={you} x2={you} y1={TOP - 10} y2={BASE} stroke="#33211a" strokeWidth="2.5" strokeDasharray="5 4" />
-          <circle cx={you} cy={youY} r="6.5" fill="#f2c94c" stroke="#33211a" strokeWidth="2.5" />
+          <line x1={you} x2={you} y1={TOP - 10} y2={BASE} stroke="#fdf1da" strokeWidth="2.5" strokeDasharray="5 4" />
+          <circle cx={you} cy={youY} r="6.5" fill="#f2c94c" stroke="#2a140a" strokeWidth="2.5" />
           <g transform={`translate(${labelX}, ${TOP - 16})`}>
-            <rect x="-58" y="-18" width="116" height="26" rx="13" fill="#33211a" />
+            <rect x="-58" y="-18" width="116" height="26" rx="13" fill="#f2cf7e" />
             <text x="0" y="0" textAnchor="middle" className="bell-you-label">You · {s.you.score}</text>
           </g>
         </g>

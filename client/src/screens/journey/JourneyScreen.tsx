@@ -21,7 +21,7 @@ import { sound } from '../../fx/sound.ts';
 import { drafts, isReducedMotion, usePrefs } from '../../prefs.ts';
 import { navigate } from '../../router.ts';
 import { FLIP_FEEL, TIER_HINT, rgb, TIER_COLOR } from '../../theme.ts';
-import { PaperCanvas, Torn, press, useDocumentTitle } from '../../ui/base.tsx';
+import { PaperCanvas, press, useDocumentTitle } from '../../ui/base.tsx';
 import { Icon, TierBadge } from '../../ui/icons.tsx';
 import { ConcordanceModal, ConfirmModal, GraceModal, LookBackModal, ReportModal, StatusModal } from './modals.tsx';
 import { CanonBar, Chain, HomeWords, Hud, VerseWords, homeReadiness, useIsWide, useKeyboardInset } from './parts.tsx';
@@ -403,9 +403,9 @@ export function JourneyScreen({ initial, clockSkew, coach, onFinale, onExit }: J
   const pendingGrace = j.pending?.type === 'grace' ? j.pending : null;
 
   return (
-    <div className={`journey kraft ${accentClass}`}>
+    <div className={`journey leather ${accentClass}`}>
       <div className={`wash ${wash ? 'on' : ''} tier-${wash ?? 'home'}`} aria-hidden="true" />
-      <Torn side="bottom" depth={14} seed={3} className="band-top">
+      <header className="bar bar-top">
         <div className="topbar">
           <button className="icon-btn" onClick={() => { press(); onExit(); }} aria-label="Leave the journey for now">
             <Icon name="book" size="1.35rem" />
@@ -434,7 +434,7 @@ export function JourneyScreen({ initial, clockSkew, coach, onFinale, onExit }: J
           </button>
         </div>
         <Hud j={j} clockSkew={clockSkew} onOpen={() => { press(); setStatus(true); }} />
-      </Torn>
+      </header>
 
       <div className={`book ${spread ? 'spread' : ''}`} ref={bookRef}>
         {spread && (
@@ -529,7 +529,7 @@ export function JourneyScreen({ initial, clockSkew, coach, onFinale, onExit }: J
       {nugget && <NuggetFlash onDone={() => setNugget(false)} />}
       {celebrate && <HomeCelebration finale={celebrate} onDone={() => { const f = celebrate; setCelebrate(null); onFinale(f); }} />}
       <Cover journeyId={j.id} spread={spread} stageRef={bookRef} rightRef={rightPage} leftRef={leftPage} />
-      <Torn side="top" depth={14} seed={9} className="band-bottom">
+      <footer className="bar bar-bottom">
         <div className="dock">
           <div className="dock-row">
             {!spread && <Chain j={j} />}
@@ -540,7 +540,7 @@ export function JourneyScreen({ initial, clockSkew, coach, onFinale, onExit }: J
           </div>
           {!spread && <CanonBar j={j} />}
         </div>
-      </Torn>
+      </footer>
 
       {/* the slip of paper a hop is written on (rule 14.2: the hop panel) */}
       <AnimatePresence>

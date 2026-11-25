@@ -5,16 +5,14 @@ import { ApiError, api } from '../api.ts';
 import type { GuideScript } from '../api.ts';
 import { useApp } from '../app-store.ts';
 import { navigate } from '../router.ts';
-import { PaperCanvas } from '../ui/base.tsx';
 import { setLastFinale } from './FinaleScreen.tsx';
 import { JourneyScreen } from './journey/JourneyScreen.tsx';
 import type { CoachStep } from './journey/JourneyScreen.tsx';
 
 function Loading({ text }: { text: string }) {
   return (
-    <div className="screen paper-surface" style={{ alignItems: 'center', justifyContent: 'center' }}>
-      <PaperCanvas seed={2} />
-      <p className="display" style={{ fontSize: '1.6rem', fontStyle: 'italic', color: 'var(--brown)' }}>{text}</p>
+    <div className="screen leather" style={{ alignItems: 'center', justifyContent: 'center' }}>
+      <p className="display" style={{ fontSize: '1.6rem', fontStyle: 'italic', color: 'var(--gilt)' }}>{text}</p>
     </div>
   );
 }

@@ -1,5 +1,6 @@
-/* Bible Hopping. The look follows the sample decks: cream parchment with a faint blackletter
-   watermark, torn kraft paper, espresso serif headlines with an italic accent, rounded pills. */
+/* Bible Hopping. The game is bound in dark leather: warm brown with a fine grain, gilt rules and
+   stitching, ivory type, smoked glass. Scripture itself stays on cream paper, as in a real Bible,
+   so anything printed on paper (.paper-surface, .parchment) switches back to dark ink. */
 
 :root {
   --paper: #fbeed6;
@@ -8,14 +9,18 @@
   --kraft: #ad8650;
   --kraft-dark: #8f6c3b;
   --kraft-deep: #6a4c26;
-  --ink: #33211a;
-  --ink-2: #5b4234;
-  --ink-3: #866b57;
-  --brown: #6e4332;
-  --caramel: #b98a5e;
-  --line: #c9a37a;
+  --leather: #2a140a;
+  --gilt: #e3bc6c;
+  --ink: #fbefd8;
+  --ink-2: #dcc6a3;
+  --ink-3: #ad9475;
+  --brown: #e8c27a;
+  --caramel: #c79a62;
+  --line: rgba(255, 226, 180, 0.2);
   --white: #fffaf0;
-  --gold: #c79226;
+  --gold: #e3bc6c;
+  --focus: #f2cf7e;
+  --bad-ink: #ffb3a3;
   --red: #a3271c;
   --crumb: #a48a5f;
   --loaf: #b5522a;
@@ -24,7 +29,7 @@
   --nugget: #d49a12;
   --home: #c79226;
   --wall: #8a8179;
-  --accent: var(--brown);
+  --accent: var(--gilt);
   --font-display: 'Cormorant Garamond Variable', 'Cormorant Garamond', 'Iowan Old Style', Georgia, serif;
   --font-scripture: 'EB Garamond Variable', 'EB Garamond', 'Iowan Old Style', Georgia, serif;
   --font-ui: 'Poppins', system-ui, -apple-system, 'Segoe UI', sans-serif;
@@ -49,7 +54,7 @@ html {
 body {
   margin: 0;
   min-height: 100%;
-  background-color: var(--kraft);
+  background-color: var(--leather);
   color: var(--ink);
   font-family: var(--font-ui);
   font-size: 1rem;
@@ -66,7 +71,13 @@ button { cursor: pointer; }
 h1, h2, h3, p { margin: 0; }
 a { color: var(--brown); }
 
-:focus-visible { outline: 3px solid var(--fish); outline-offset: 2px; border-radius: 6px; }
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; border-radius: 6px; }
+
+/* paper: scripture, maps and anything else printed on a page takes dark ink */
+.paper-surface, .parchment, .verse-option, .road-stop, .tripmap.card, .bc-how, .desk {
+  --ink: #33211a; --ink-2: #5b4234; --ink-3: #866b57; --brown: #6e4332; --caramel: #b98a5e; --line: #c9a37a; --gold: #c79226; --focus: #1c6e8c; --bad-ink: #6d150e;
+  color: var(--ink);
+}
 
 .sr-only {
   position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden;
@@ -231,7 +242,7 @@ label.field-label { display: block; font-size: 0.78rem; font-weight: 600; letter
 
 /* ---------------------------------------------------------------- the journey */
 
-.journey { height: 100dvh; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; grid-template-columns: minmax(0, 1fr); overflow: hidden; position: relative; --accent: var(--brown); }
+.journey { height: 100dvh; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; grid-template-columns: minmax(0, 1fr); overflow: hidden; position: relative; --accent: #6e4332; }
 .journey > * { min-width: 0; }
 .journey.arrived-crumb { --accent: var(--crumb); }
 .journey.arrived-loaf { --accent: var(--loaf); }
@@ -271,7 +282,7 @@ label.field-label { display: block; font-size: 0.78rem; font-weight: 600; letter
 .chip .pips i { width: 0.46rem; height: 0.46rem; border-radius: 50%; background: rgba(255, 250, 240, 0.32); transition: background 0.3s, transform 0.3s var(--spring); }
 .chip .pips i.on { background: var(--white); transform: scale(1.12); }
 .chip.strikes .pips i.on { background: #ffb4a0; }
-.chip.ready { background: var(--white); color: var(--brown); text-shadow: none; }
+.chip.ready { background: var(--white); color: #5a3410; text-shadow: none; }
 .chip.spent { opacity: 0.55; }
 .chip:focus-visible { outline: 3px solid var(--white); }
 
@@ -331,7 +342,7 @@ label.field-label { display: block; font-size: 0.78rem; font-weight: 600; letter
 .msg-line { min-height: 2.6rem; margin-top: 0.5rem; padding: 0.55rem 0.9rem; border-radius: 1rem; font-size: 0.9rem; line-height: 1.35; display: flex; gap: 0.55rem; align-items: flex-start; }
 .msg-line.good { background: color-mix(in srgb, var(--accent) 13%, transparent); color: var(--ink); }
 .msg-line.warn { background: rgba(199, 146, 38, 0.17); }
-.msg-line.bad { background: rgba(163, 39, 28, 0.13); color: #6d150e; }
+.msg-line.bad { background: rgba(163, 39, 28, 0.16); color: var(--bad-ink); }
 .msg-line.info { background: rgba(110, 67, 50, 0.09); }
 .msg-line .icon { margin-top: 0.12rem; font-size: 1.05rem; }
 .msg-line button.link { all: unset; cursor: pointer; text-decoration: underline; font-weight: 600; }
@@ -348,7 +359,7 @@ label.field-label { display: block; font-size: 0.78rem; font-weight: 600; letter
 .chain { flex: 1; min-width: 0; display: flex; align-items: center; gap: 0.15rem; overflow-x: auto; scrollbar-width: none; padding: 0.15rem 0.1rem 0.3rem; scroll-behavior: smooth; mask-image: linear-gradient(90deg, transparent, #000 0.8rem, #000 calc(100% - 0.8rem), transparent); }
 .chain::-webkit-scrollbar { display: none; }
 .chain .stop { flex: none; display: inline-flex; align-items: center; gap: 0.3rem; font-size: 0.76rem; font-weight: 600; white-space: nowrap; padding: 0.2rem 0.55rem; border-radius: 999px; background: rgba(60, 36, 12, 0.26); }
-.chain .stop.home { background: var(--white); color: var(--brown); text-shadow: none; }
+.chain .stop.home { background: var(--white); color: #5a3410; text-shadow: none; }
 .chain .stop.here { box-shadow: 0 0 0 2px var(--white); }
 .chain .link { flex: none; display: inline-flex; align-items: center; gap: 0.2rem; font-size: 0.7rem; font-weight: 600; padding: 0.12rem 0.45rem 0.12rem 0.2rem; border-radius: 999px; background: var(--accent); color: var(--white); box-shadow: 0 1px 2px rgba(40, 20, 4, 0.35); margin: 0 0.1rem; }
 .chain .link .tier-badge { box-shadow: none; background: rgba(255, 250, 240, 0.22); }
@@ -403,7 +414,7 @@ label.field-label { display: block; font-size: 0.78rem; font-weight: 600; letter
 
 .grace-scene { text-align: center; }
 .grace-scene .emblem { width: 5.2rem; height: 5.2rem; margin: 0 auto 0.7rem; display: grid; place-items: center; border-radius: 50%; color: var(--white); background: radial-gradient(circle at 35% 30%, #c98a7c, var(--red) 70%); font-size: 2.7rem; box-shadow: 0 6px 18px rgba(163, 39, 28, 0.35); }
-.grace-scene .emblem.dove { background: radial-gradient(circle at 35% 30%, #fff, #e9dcc0 75%); color: var(--brown); box-shadow: 0 0 0 6px rgba(255, 250, 240, 0.5), 0 8px 24px rgba(199, 146, 38, 0.45); }
+.grace-scene .emblem.dove { background: radial-gradient(circle at 35% 30%, #fff, #e9dcc0 75%); color: #6e4332; box-shadow: 0 0 0 6px rgba(255, 250, 240, 0.5), 0 8px 24px rgba(199, 146, 38, 0.45); }
 @keyframes descend { from { transform: translateY(-2.4rem) scale(0.7); opacity: 0; } to { transform: none; opacity: 1; } }
 .grace-scene .emblem.dove { animation: descend 0.9s var(--ease-out) 0.25s both; }
 .grace-box { margin-top: 1rem; border: 1.5px dashed var(--gold); border-radius: 1.2rem; padding: 0.8rem 1rem; background: rgba(199, 146, 38, 0.1); font-size: 0.95rem; text-align: left; display: flex; gap: 0.7rem; align-items: center; }
@@ -834,9 +845,9 @@ input[type='range'] { accent-color: var(--brown); width: 8rem; }
 .st-count { margin-left: auto; letter-spacing: 0.02em; text-transform: none; font-weight: 600; color: var(--ink-3); transition: color 0.3s; }
 .st-count.flash { color: var(--gold); }
 .bell { display: block; width: 100%; height: auto; margin-top: 0.4rem; overflow: visible; }
-.bell-rug line { stroke: #8f6c3b; stroke-opacity: 0.45; stroke-width: 1.5; }
+.bell-rug line { stroke: #f0d6a6; stroke-opacity: 0.4; stroke-width: 1.5; }
 .bell-tick { font: 600 13px var(--font-ui); fill: var(--ink-3); }
-.bell-you-label { font: 700 14px var(--font-ui); fill: #ffe7a3; }
+.bell-you-label { font: 700 14px var(--font-ui); fill: #2a1508; }
 .bell-you line, .bell-you circle, .bell-you g { transition: transform 0.5s var(--ease-out); }
 .st-axis { margin-top: 0.3rem !important; }
 .st-name em { font-style: normal; color: var(--ink-3); font-weight: 500; }
@@ -1073,7 +1084,7 @@ button.glass:focus-visible { outline: 3px solid var(--fish); outline-offset: 3px
 /* the chips under it: frosted, and they react */
 .hud-row2 .chip { background: linear-gradient(150deg, rgba(255, 246, 226, 0.22), rgba(50, 24, 6, 0.18)); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
   border: 1px solid rgba(255, 255, 255, 0.26); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28), 0 2px 6px rgba(30, 14, 2, 0.22); padding: 0.26rem 0.72rem; font-size: 0.8rem; }
-.hud-row2 .chip.ready { background: linear-gradient(150deg, #fffaf0, #f6e6c0); color: var(--brown); }
+.hud-row2 .chip.ready { background: linear-gradient(150deg, #fffaf0, #f6e6c0); color: #5a3410; }
 .chip .pips i { width: 0.55rem; height: 0.55rem; }
 .chip .pips i.on { box-shadow: 0 0 6px rgba(255, 240, 200, 0.7); }
 .chip .pips i.pop { animation: pip-pop 0.65s var(--spring); }
@@ -1090,7 +1101,7 @@ button.glass:focus-visible { outline: 3px solid var(--fish); outline-offset: 3px
 [data-motion='reduced'] .lamp3-flame::before, [data-motion='reduced'] .lamp3-flame i, [data-motion='reduced'] .lamp3-smoke i { animation: none; }
 
 /* frosted cards on every paper page */
-.sheet-page .card, .sheet-page .badge, .sheet-page .numbers .cell, .sheet-page .road-stop, .sheet-page .step, .sheet-page .tier-row, .sheet-page .ach-grid, .sheet-page .sharecard ~ .card {
+.sheet-page .card, .sheet-page .badge, .sheet-page .numbers .cell, .sheet-page .road-stop, .sheet-page .step, .sheet-page .tier-row, .sheet-page .ach-grid {
   background: linear-gradient(150deg, rgba(255, 253, 247, 0.8), rgba(255, 245, 226, 0.62));
   -webkit-backdrop-filter: blur(14px) saturate(1.4); backdrop-filter: blur(14px) saturate(1.4);
   border-color: rgba(255, 255, 255, 0.75);
@@ -1154,3 +1165,148 @@ button.logo:focus-visible { outline: 3px solid var(--fish); outline-offset: 6px;
 @media (max-width: 26rem) { .logo.mini .logo-bible { display: none; } .topbar .seg button { padding: 0.3rem 0.6rem; } }
 [data-motion='reduced'] .logo .ball-body, [data-motion='reduced'] .logo .ball-shadow, [data-motion='reduced'] .logo .lh { animation: none !important; }
 .home2-logo { margin: 0.1rem 0 0; font: inherit; display: grid; justify-items: center; }
+
+/* ================================================================ the leather binding */
+/* Every screen sits on the same dark leather as the cover. Scripture stays on paper. */
+.leather { color: var(--ink); background-color: var(--leather);
+  background-image: var(--grain),
+    radial-gradient(ellipse 120% 55% at 50% 0%, rgba(255, 186, 110, 0.15), rgba(0, 0, 0, 0) 62%),
+    radial-gradient(ellipse 150% 100% at 50% 28%, #4d2714 0%, #36190c 55%, #200d05 100%);
+  background-size: 256px 256px, auto, auto; }
+
+/* the bars at the top and bottom: a darker strip of leather with gilt stitching along the edge */
+.bar { position: relative; z-index: 3; color: var(--white); background-color: #2f170b;
+  background-image: var(--grain), linear-gradient(180deg, #46230f, #321a0c);
+  background-size: 256px 256px, auto; }
+.bar-top { padding-bottom: 0.8rem; box-shadow: 0 1px 0 rgba(0, 0, 0, 0.5), 0 10px 22px rgba(0, 0, 0, 0.38); }
+.bar-bottom { padding-top: 0.8rem; padding-bottom: calc(0.5rem + var(--safe-b)); box-shadow: 0 -1px 0 rgba(0, 0, 0, 0.5), 0 -10px 22px rgba(0, 0, 0, 0.38); }
+.bar::after { content: ''; position: absolute; left: 0.7rem; right: 0.7rem; height: 0; border-top: 1.5px dashed rgba(227, 188, 108, 0.48); pointer-events: none; }
+.bar-top::after { bottom: 0.36rem; }
+.bar-bottom::after { top: 0.36rem; }
+.bar .topbar { gap: 0.55rem; padding-top: calc(0.55rem + var(--safe-t)); }
+.bar .topbar .title { color: var(--ink); text-shadow: 0 1px 2px rgba(0, 0, 0, 0.55); }
+.bar .icon-btn { width: 2.55rem; height: 2.55rem; font-size: 1.2rem; color: #f3d9a4;
+  background: linear-gradient(160deg, rgba(255, 236, 205, 0.13), rgba(255, 236, 205, 0.04));
+  box-shadow: inset 0 0 0 1px rgba(255, 226, 180, 0.2), inset 0 1px 0 rgba(255, 240, 215, 0.16), 0 4px 12px rgba(0, 0, 0, 0.3); }
+.bar .icon-btn:hover { background: linear-gradient(160deg, rgba(255, 236, 205, 0.2), rgba(255, 236, 205, 0.07)); }
+
+/* type, rules and small furniture */
+.leather .display { text-shadow: 0 2px 12px rgba(0, 0, 0, 0.3); }
+.leather .paper-surface .display { text-shadow: none; }
+.leather .ornament, .leather .dots-deco { color: var(--gilt); }
+.leather .seg { background: rgba(0, 0, 0, 0.28); box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.45), 0 1px 0 rgba(255, 226, 180, 0.1); }
+.leather .seg button { color: var(--ink-2); }
+.leather .seg button[aria-pressed='true'] { background: linear-gradient(180deg, #f4d68a, #d9a743); color: #3a2004; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.45); }
+.leather .seg button:disabled { opacity: 0.4; }
+.leather .switch span { background: rgba(0, 0, 0, 0.34); box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.45), inset 0 0 0 1px rgba(255, 226, 180, 0.14); }
+.leather .switch span::after { background: #fdf3e0; }
+.leather .switch input:checked + span { background: linear-gradient(180deg, #f0c95e, #cc931f); }
+.leather .switch input:focus-visible + span { outline-color: var(--focus); }
+
+/* buttons: leather by default, gold for the big moments */
+.leather .btn { color: var(--ink); background: linear-gradient(180deg, #6d3c22, #4e2915);
+  box-shadow: inset 0 1px 0 rgba(255, 220, 170, 0.22), inset 0 0 0 1px rgba(227, 188, 108, 0.3), 0 4px 0 #170802, 0 10px 20px rgba(0, 0, 0, 0.35); }
+.leather .btn:hover { background: linear-gradient(180deg, #794529, #59301a); }
+.leather .btn:active, .leather .btn.pressed { box-shadow: inset 0 1px 0 rgba(255, 220, 170, 0.18), inset 0 0 0 1px rgba(227, 188, 108, 0.3), 0 1px 0 #170802, 0 3px 8px rgba(0, 0, 0, 0.3); }
+.leather .btn.ghost { color: var(--ink); background: rgba(255, 236, 205, 0.04); box-shadow: inset 0 0 0 1.5px rgba(227, 188, 108, 0.42); }
+.leather .btn.ghost:hover { background: rgba(255, 236, 205, 0.1); }
+.leather .btn.ghost:active { box-shadow: inset 0 0 0 1.5px var(--gilt); }
+.leather .btn.gold, .btn.gold { color: #3a2004; background: linear-gradient(180deg, #ffe7a0 0%, #f4c955 34%, #e0a42d 66%, #cc8c1c 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 252, 230, 0.9), inset 0 -2px 0 rgba(130, 74, 0, 0.25), 0 4px 0 #7a4c09, 0 10px 22px rgba(0, 0, 0, 0.4); }
+.leather .btn.gold:hover { background: linear-gradient(180deg, #fff0ba 0%, #f8d168 34%, #e7ae38 66%, #d29522 100%); }
+.leather .btn.caramel { color: #2a1508; background: linear-gradient(180deg, #dcb47e, #b98a5e); box-shadow: inset 0 1px 0 rgba(255, 240, 210, 0.5), 0 4px 0 #5e3d1c, 0 8px 16px rgba(0, 0, 0, 0.3); }
+.leather .btn.tier { color: #fffaf0; background: var(--accent); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25), 0 4px 0 color-mix(in srgb, var(--accent) 55%, #000), 0 8px 16px rgba(0, 0, 0, 0.35); }
+.leather .btn .chev { background: rgba(255, 250, 240, 0.18); }
+
+.leather .pill { color: #f2cf7e; background: rgba(227, 188, 108, 0.14); box-shadow: inset 0 0 0 1px rgba(227, 188, 108, 0.42); }
+.leather .pill.soft { color: var(--ink); background: rgba(255, 236, 205, 0.09); box-shadow: inset 0 0 0 1px rgba(255, 226, 180, 0.14); }
+.leather .pill.line { color: var(--ink-2); background: transparent; box-shadow: inset 0 0 0 1.5px var(--line); }
+
+/* writing is done on paper */
+.leather .field { color: #33211a; background: #fdf6e8; border: 1.5px solid #dcc193; box-shadow: inset 0 2px 4px rgba(120, 80, 30, 0.16); }
+.leather .field::placeholder { color: #9b8370; }
+.leather .field:focus { border-color: var(--accent); box-shadow: inset 0 2px 4px rgba(120, 80, 30, 0.16), 0 0 0 3px color-mix(in srgb, var(--accent) 50%, transparent); }
+
+/* cards: smoked glass on the leather */
+.leather .card, .leather .badge, .leather .numbers .cell, .leather .step, .leather .tier-row, .leather .ach-grid, .leather .stat, .leather .st-list li {
+  background: linear-gradient(160deg, rgba(255, 236, 205, 0.1), rgba(255, 236, 205, 0.035));
+  -webkit-backdrop-filter: blur(14px) saturate(1.3); backdrop-filter: blur(14px) saturate(1.3);
+  border: 1px solid rgba(255, 226, 180, 0.15);
+  box-shadow: inset 0 1px 0 rgba(255, 240, 215, 0.12), 0 12px 28px rgba(0, 0, 0, 0.3); }
+.leather .stat:hover { transform: translateY(-2px); }
+.leather .tier-row .v { color: color-mix(in srgb, var(--accent) 55%, #fff1d6); }
+.stat .n, .numbers .cell .v, .tier-row .v, .st-top, .cal-month { font-variant-numeric: lining-nums tabular-nums; }
+.leather .step::before { color: #3a2004; background: radial-gradient(circle at 34% 28%, #f4d27e, #c8921f 62%, #7d5306); box-shadow: 0 2px 0 #4e3104; }
+.leather .badge.earned { border-color: rgba(227, 188, 108, 0.6); background: linear-gradient(90deg, rgba(227, 188, 108, 0.2), rgba(255, 236, 205, 0.04)); }
+.leather .badge .medal { background: rgba(255, 236, 205, 0.1); }
+.leather .checklist .item .box { background: rgba(255, 236, 205, 0.1); }
+.leather .checklist .item.done .box { background: var(--gilt); color: #3a2004; }
+.leather .tripmap .info { background: rgba(110, 67, 50, 0.08); }
+
+/* paper cards: verses, and the map of the trip */
+.leather .tripmap.card, .leather .road-stop, .leather .verse-option, .parchment {
+  background: linear-gradient(170deg, #fdf4e1, #f5e2bf); border: 1px solid #e0c597;
+  -webkit-backdrop-filter: none; backdrop-filter: none;
+  box-shadow: inset 0 0 28px rgba(150, 100, 40, 0.14), 0 2px 0 #cfb07c, 0 14px 30px rgba(0, 0, 0, 0.42); }
+.leather .verse-option:hover, .leather .verse-option:focus-visible { border-color: #b98a5e; box-shadow: inset 0 0 28px rgba(150, 100, 40, 0.14), 0 3px 0 #b98a5e, 0 14px 30px rgba(0, 0, 0, 0.42); }
+
+/* the calendar */
+.leather .cal .day { background: rgba(255, 236, 205, 0.06); color: var(--ink-3); }
+.leather .cal .day.won { background: linear-gradient(160deg, #f0c95e, #c98d1c); color: #3a2004; box-shadow: 0 2px 0 #6d4206; }
+.leather .cal .day.lost { background: rgba(0, 0, 0, 0.34); color: var(--ink-3); box-shadow: inset 0 0 0 1px rgba(255, 226, 180, 0.12); }
+.leather .cal .day.playing { background: rgba(227, 188, 108, 0.12); color: var(--gilt); box-shadow: inset 0 0 0 2px var(--gilt); }
+.leather .cal .day.rest { background: repeating-linear-gradient(135deg, rgba(255, 236, 205, 0.08) 0 4px, transparent 4px 8px); }
+.leather .cal .day.today { outline-color: var(--gilt); }
+.leather .cal .day.blank { background: transparent; }
+
+/* standings */
+.leather .st-list li.you { border-color: rgba(227, 188, 108, 0.7); background: linear-gradient(90deg, rgba(227, 188, 108, 0.24), rgba(255, 236, 205, 0.04)); }
+.leather .st-place:not(.p1):not(.p2):not(.p3) { color: var(--ink-2); background: rgba(255, 236, 205, 0.1); }
+.leather .st-guest { background: rgba(255, 236, 205, 0.1); }
+.leather .st-live { color: #ff9580; }
+.leather .st-you, .leather .medal-count { color: #ffe7a3; background: #1c0c04; box-shadow: 0 0 0 2px var(--gilt), 0 2px 4px rgba(0, 0, 0, 0.4); }
+
+/* the finale */
+.leather .finale-hero.lost .emblem { color: var(--ink); background: radial-gradient(circle at 35% 30%, #8d7462, #3a2418 75%); box-shadow: 0 0 0 7px rgba(255, 236, 205, 0.08), 0 10px 26px rgba(0, 0, 0, 0.45); }
+.leather .sharecard { color: var(--paper); background: linear-gradient(160deg, #1f0e06, #2e160a); border: 1px solid rgba(227, 188, 108, 0.36); box-shadow: inset 0 1px 0 rgba(255, 226, 180, 0.1), 0 14px 30px rgba(0, 0, 0, 0.45); }
+
+/* dialogs are leather too */
+.scrim { background: rgba(12, 5, 1, 0.62); }
+.leather .modal:not(.badge-card) { color: var(--ink); background-color: #2f170b;
+  background-image: var(--grain), linear-gradient(170deg, #4c2816 0%, #371b0d 50%, #28130a 100%); background-size: 256px 256px, auto;
+  border: 1px solid rgba(227, 188, 108, 0.3); -webkit-backdrop-filter: none; backdrop-filter: none;
+  box-shadow: inset 0 1px 0 rgba(255, 226, 180, 0.14), 0 -14px 44px rgba(0, 0, 0, 0.55); }
+.leather .modal h2 em { color: var(--gilt); }
+.leather .bc-close { color: #33211a; background: rgba(255, 250, 240, 0.95); box-shadow: 0 4px 0 rgba(0, 0, 0, 0.25); }
+.leather .bc-close:hover { background: #fff; }
+
+.toast { color: var(--ink); background: #1f0e06; box-shadow: inset 0 0 0 1px rgba(227, 188, 108, 0.35), 0 12px 30px rgba(0, 0, 0, 0.5); }
+.coach-card { color: #fbefd8; background: linear-gradient(160deg, #3f1f10, #26110a); border: 1px solid rgba(227, 188, 108, 0.4); box-shadow: 0 14px 34px rgba(0, 0, 0, 0.55); }
+
+/* ---------------------------------------------------------------- the journey on leather */
+/* the pages lie on the leather, with a little of it showing round the edges */
+.leather .book { padding: 0.5rem 0.45rem; }
+.leather .page { border-radius: 5px; box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35), 0 10px 26px rgba(0, 0, 0, 0.45); }
+.leather .book.spread .page.left { border-radius: 5px 0 0 5px; }
+.leather .book.spread .page.right { border-radius: 0 5px 5px 0; }
+@media (min-width: 60rem) {
+  .leather .book { padding: 0.9rem clamp(1rem, 4vw, 3rem); }
+  .leather .book:not(.spread) .page.right { box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35), 0 18px 40px rgba(0, 0, 0, 0.5); }
+}
+
+.leather .hud3 { background: linear-gradient(160deg, rgba(255, 236, 205, 0.12), rgba(255, 236, 205, 0.03)); border: 1px solid rgba(255, 226, 180, 0.18);
+  box-shadow: inset 0 1px 0 rgba(255, 240, 215, 0.14), 0 8px 20px rgba(0, 0, 0, 0.35); }
+.leather .hud-row2 .chip:not(.ready) { background: linear-gradient(160deg, rgba(255, 236, 205, 0.12), rgba(255, 236, 205, 0.03)); border: 1px solid rgba(255, 226, 180, 0.16); box-shadow: inset 0 1px 0 rgba(255, 240, 215, 0.12), 0 2px 6px rgba(0, 0, 0, 0.25); }
+.bar .chain .stop:not(.home) { background: rgba(255, 236, 205, 0.1); box-shadow: inset 0 0 0 1px rgba(255, 226, 180, 0.14); }
+.bar .lookback-btn { color: var(--ink); background: linear-gradient(160deg, rgba(255, 236, 205, 0.13), rgba(255, 236, 205, 0.04)); box-shadow: inset 0 0 0 1px rgba(255, 226, 180, 0.2), 0 2px 6px rgba(0, 0, 0, 0.25); }
+
+/* the slip a hop is written on: leather, with paper to write on */
+.leather .hop-card { color: var(--ink); background-color: #301809;
+  background-image: var(--grain), linear-gradient(180deg, #4b2715, #2f170b); background-size: 256px 256px, auto;
+  border: 1px solid rgba(227, 188, 108, 0.34); border-bottom: 0; -webkit-backdrop-filter: none; backdrop-filter: none;
+  box-shadow: inset 0 1px 0 rgba(255, 226, 180, 0.16), 0 -12px 34px rgba(0, 0, 0, 0.5); }
+.leather .hop-card .grab { background: rgba(255, 226, 180, 0.3); }
+.leather .hop-head .word { color: color-mix(in srgb, var(--accent) 48%, #fff1d6); }
+.leather .hop-head .close:hover { background: rgba(255, 236, 205, 0.1); }
+.leather .forms span { color: var(--ink); background: color-mix(in srgb, var(--accent) 34%, rgba(255, 236, 205, 0.06)); }
+.leather .bonus-hint b { color: color-mix(in srgb, var(--accent) 48%, #fff1d6); }
