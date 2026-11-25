@@ -107,55 +107,89 @@ export function homeReadiness(j: JourneyView): { ready: boolean; verses: number;
   return { ready: verses === 0 && manna === 0, verses, manna };
 }
 
+/** Remembers which indexes changed, for a moment, so they can animate. */
+function useChanged(value: number, ms: number): { up: number[]; down: number[]; key: number } {
+  const prev = useRef(value);
+  const [state, setState] = useState<{ up: number[]; down: number[]; key: number }>({ up: [], down: [], key: 0 });
+  useEffect(() => {
+    const before = prev.current;
+    prev.current = value;
+    if (value === before) return;
+    const range = (lo: number, hi: number) => Array.from({ length: hi - lo }, (_, i) => lo + i);
+    setState((s) => ({ up: value > before ? range(before, value) : [], down: value < before ? range(value, before) : [], key: s.key + 1 }));
+    const t = window.setTimeout(() => setState((s) => ({ ...s, up: [], down: [] })), ms);
+    return () => window.clearTimeout(t);
+  }, [value, ms]);
+  return state;
+}
+
 export function Hud({ j, clockSkew, onOpen }: { j: JourneyView; clockSkew: number; onOpen: () => void }) {
-  const manna = useCountTo(j.manna);
-  const [bump, setBump] = useState(0);
-  useEffect(() => {
-    setBump((b) => b + 1);
-  }, [j.manna]);
+  const manna = useCountTo(j.manna, 900);
   const now = useNow(1000) + clockSkew;
-  const prevOil = useRef(j.oil);
-  const [burning, setBurning] = useState<number[]>([]);
-  const [filling, setFilling] = useState<number[]>([]);
+  // the manna coin spins and a "+N" floats up when the total changes
+  const prevManna = useRef(j.manna);
+  const [floats, setFloats] = useState<{ id: number; n: number }[]>([]);
+  const [spin, setSpin] = useState(0);
   useEffect(() => {
-    const before = prevOil.current, after = j.oil;
-    prevOil.current = after;
-    if (after < before) {
-      setBurning(Array.from({ length: before - after }, (_, i) => after + i));
-      const t = window.setTimeout(() => setBurning([]), 520);
-      return () => window.clearTimeout(t);
-    }
-    if (after > before) {
-      setFilling(Array.from({ length: after - before }, (_, i) => before + i));
-      const t = window.setTimeout(() => setFilling([]), 520);
-      return () => window.clearTimeout(t);
-    }
-  }, [j.oil]);
+    const d = j.manna - prevManna.current;
+    prevManna.current = j.manna;
+    if (!d) return;
+    const id = Date.now();
+    setSpin((x) => x + 1);
+    setFloats((f) => [...f, { id, n: d }]);
+    const t = window.setTimeout(() => setFloats((f) => f.filter((x) => x.id !== id)), 1400);
+    return () => window.clearTimeout(t);
+  }, [j.manna]);
+  const oil = useChanged(Math.max(0, j.oil), 1300);
+  const strikes = useChanged(j.strikes, 700);
+  const cord = useChanged(j.cord.have, 700);
+  const hops = useChanged(j.hops, 600);
   const left = j.deadline === null ? null : j.deadline - now;
   const late = left !== null && left < 30 * 60000;
   const ready = homeReadiness(j);
+  const flame = Math.max(0, Math.min(1, j.oil / Math.max(1, j.oilCap)));
   return (
     <>
-      <div className="hud">
-        <button key={bump} className={`hud-manna ${j.manna < 0 ? 'debt' : ''} ${bump > 1 ? 'bump' : ''}`} onClick={onOpen} aria-label={`${j.manna} manna${j.manna < 0 ? ', in debt' : ''}. Open the journey status.`}>
-          <TierBadge tier="home" size={32} className="manna-badge" />
-          <span>
-            <span className="tabular manna-num">{manna}</span>
+      <div className="hud3">
+        <button className={`hud3-manna ${j.manna < 0 ? 'debt' : ''}`} onClick={onOpen} aria-label={`${j.manna} manna${j.manna < 0 ? ', in debt' : ''}. Open the journey status.`}>
+          <span className="coin3" key={spin} data-spin={spin > 0 ? 'y' : 'n'} aria-hidden="true">
+            <span className="coin3-face"><Icon name="manna" size={26} strokeWidth={1.9} /></span>
+          </span>
+          <span className="hud3-num">
+            <b className="tabular">{manna}</b>
             <small>{j.manna < 0 ? 'in debt' : 'manna'}</small>
           </span>
+          {floats.map((f) => <span key={f.id} className={`hud3-float ${f.n < 0 ? 'neg' : ''}`}>{f.n > 0 ? `+${f.n}` : f.n}</span>)}
         </button>
-        <button className={`hud-oil ${j.oil <= 2 ? 'low' : ''}`} onClick={onOpen} aria-label={`Lamp oil: ${plural(j.oil, 'drop')} of ${j.oilCap}. Open the journey status.`}>
-          <Icon name="lamp" className="lamp" size="1.6rem" />
-          <span className="oil-dots" style={{ gridTemplateColumns: `repeat(${j.oilCap}, 1fr)` }} aria-hidden="true">
-            {Array.from({ length: j.oilCap }, (_, i) => (
-              <i key={i} className={`${i >= j.oil ? 'out' : ''} ${burning.includes(i) ? 'burning' : ''} ${filling.includes(i) ? 'filling' : ''}`} />
-            ))}
+
+        <button className={`hud3-oil ${j.oil <= 2 ? 'low' : ''} ${j.oil <= 0 ? 'out' : ''}`} onClick={onOpen} aria-label={`Lamp oil: ${plural(j.oil, 'drop')} of ${j.oilCap}. Open the journey status.`}>
+          <span className="lamp3" aria-hidden="true">
+            <span className="lamp3-flame" style={{ ['--f' as string]: (0.35 + 0.65 * flame).toFixed(2) }}><i /></span>
+            {j.oil <= 0 && <span className="lamp3-smoke"><i /><i /><i /></span>}
+            <span className="lamp3-body"><Icon name="lamp" size={30} strokeWidth={1.7} /></span>
+          </span>
+          <span className="oil3">
+            <span className="oil3-track" aria-hidden="true">
+              {Array.from({ length: j.oilCap }, (_, i) => (
+                <span key={i} className="oil3-sock">
+                  {i < j.oil && <i className={`drop3 ${oil.up.includes(i) ? 'fill' : ''}`} key={oil.up.includes(i) ? `f${oil.key}` : 'd'} />}
+                  {oil.down.includes(i) && (
+                    <span className="vapor" key={`v${oil.key}-${i}`} style={{ ['--d' as string]: `${(i - oil.down[0]) * 90}ms` }}>
+                      <i className="drop3 ghost" />
+                      <b /><b /><b />
+                    </span>
+                  )}
+                </span>
+              ))}
+            </span>
+            <span className="oil3-label"><b className="tabular">{Math.max(0, j.oil)}</b>/{j.oilCap} oil</span>
           </span>
         </button>
+
         {left !== null && (
-          <span className={`hud-time ${late ? 'late' : ''}`} role="timer" aria-label={`${timeLeft(left)} until the door shuts at midnight, ${j.tzLabel}`}>
-            <Icon name="clock" size="1rem" />
-            {timeLeft(left)}
+          <span className={`hud3-time ${late ? 'late' : ''}`} role="timer" aria-label={`${timeLeft(left)} until the door shuts at midnight, ${j.tzLabel}`}>
+            <Icon name="clock" size="1.05rem" />
+            <b>{timeLeft(left)}</b>
           </span>
         )}
       </div>
@@ -168,18 +202,18 @@ export function Hud({ j, clockSkew, onOpen }: { j: JourneyView; clockSkew: numbe
           <button className="chip" onClick={onOpen} aria-label={`${j.cord.have} of ${j.cord.need} verses visited before you can head home`}>
             <Icon name="cord" size="1rem" strokeWidth={2} />
             <span className="pips" aria-hidden="true">
-              {Array.from({ length: j.cord.need }, (_, i) => <i key={i} className={i < j.cord.have ? 'on' : ''} />)}
+              {Array.from({ length: j.cord.need }, (_, i) => <i key={cord.up.includes(i) ? `p${cord.key}-${i}` : i} className={`${i < j.cord.have ? 'on' : ''} ${cord.up.includes(i) ? 'pop' : ''}`} />)}
             </span>
             verses
           </button>
         )}
-        <button className="chip" onClick={onOpen} aria-label={`${j.hops} of ${j.hopLimit} hops taken`}>
+        <button className={`chip ${hops.up.length ? 'tick' : ''}`} key={`h${hops.key}`} onClick={onOpen} aria-label={`${j.hops} of ${j.hopLimit} hops taken`}>
           <Icon name="hop" size="0.95rem" strokeWidth={2.2} /> {j.hops}/{j.hopLimit}
         </button>
-        <button className="chip strikes" onClick={onOpen} aria-label={`${plural(j.strikes, 'strike')} in a row, of ${j.strikesMax}`}>
+        <button className={`chip strikes ${strikes.up.length ? 'hit' : ''}`} key={`s${strikes.key}`} onClick={onOpen} aria-label={`${plural(j.strikes, 'strike')} in a row, of ${j.strikesMax}`}>
           <Icon name="rooster" size="1rem" strokeWidth={1.9} />
           <span className="pips" aria-hidden="true">
-            {Array.from({ length: j.strikesMax }, (_, i) => <i key={i} className={i < j.strikes ? 'on' : ''} />)}
+            {Array.from({ length: j.strikesMax }, (_, i) => <i key={i} className={`${i < j.strikes ? 'on' : ''} ${strikes.up.includes(i) ? 'crack' : ''} ${strikes.down.includes(i) ? 'heal' : ''}`} />)}
           </span>
         </button>
         <button className={`chip ${j.graces > 0 ? '' : 'spent'}`} onClick={onOpen} aria-label={j.graces > 0 ? `${plural(j.graces, 'Grace')} left` : 'Grace already used'}>
