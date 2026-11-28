@@ -5,6 +5,7 @@ import { AchievementsScreen } from './screens/AchievementsScreen.tsx';
 import { FinaleScreen } from './screens/FinaleScreen.tsx';
 import { HistoryScreen } from './screens/HistoryScreen.tsx';
 import { HowToPlay } from './screens/HowToPlay.tsx';
+import { JournalScreen } from './screens/JournalScreen.tsx';
 import { DailyPlay, GuidePlay } from './screens/Play.tsx';
 import { PracticeScreen } from './screens/PracticeScreen.tsx';
 import { RevelationScreen } from './screens/RevelationScreen.tsx';
@@ -80,6 +81,7 @@ export function App() {
   else if (route === '/achievements') screen = <AchievementsScreen />;
   else if (route === '/settings') screen = <SettingsScreen today={today} />;
   else if (route === '/how') screen = <HowToPlay />;
+  else if (route === '/journal') screen = <JournalScreen />;
   else if (route.startsWith('/standings/')) screen = <StandingsScreen date={route.split('/')[2]} />;
   else if (route.startsWith('/revelation/')) screen = <RevelationScreen date={route.split('/')[2]} />;
   else screen = <TodayScreen today={today} clockSkew={skew.current} />;

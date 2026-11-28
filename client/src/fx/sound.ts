@@ -358,6 +358,32 @@ class SoundEngine {
   }
 
   /** Home again. */
+  /** A verse kept in the Journal: a ribbon laid in the page. */
+  keep(): void {
+    this.noise({ dur: 0.05, gain: 0.04, freq: 3000, q: 1 });
+    this.pluck(N.E5, 0.01, 0.12);
+    this.pluck(N.B5, 0.09, 0.1);
+  }
+
+  /** A verse taken out of the Journal. */
+  unkeep(): void {
+    this.pluck(N.B4, 0, 0.09);
+  }
+
+  /** A heavy wooden door swinging open on old hinges. */
+  creak(at = 0): void {
+    this.tone({ at, freq: 92, to: 58, dur: 0.22, gain: 0.22, lowpass: 600 });
+    this.noise({ at, dur: 0.05, gain: 0.12, type: 'lowpass', freq: 900 });
+    [0.08, 0.2, 0.33, 0.5, 0.62].forEach((d, i) => this.noise({ at: at + d, dur: 0.09 + (i % 2) * 0.05, gain: 0.05, type: 'bandpass', freq: 700 + i * 140, to: 1100 + i * 90, q: 9 }));
+    this.tone({ at: at + 0.1, freq: 240, to: 330, dur: 0.55, gain: 0.025, type: 'sawtooth', lowpass: 900, vibrato: { rate: 23, depth: 18 } });
+  }
+
+  /** Light pouring through: a soft rising rush. */
+  swell(at = 0): void {
+    this.noise({ at, dur: 1.2, gain: 0.07, type: 'highpass', freq: 900, to: 6500, attack: 0.5, wet: 0.6 });
+    this.tone({ at, freq: N.D4, dur: 1.4, gain: 0.05, attack: 0.6, wet: 0.6, type: 'triangle' });
+  }
+
   home(at = 0): void {
     [N.D3, N.A3, N.D4, N.Fs4, N.A4].forEach((f) => this.tone({ at, freq: f, dur: 2.4, gain: 0.07, attack: 0.35, wet: 0.7, type: 'triangle', lowpass: 2600 }));
     [N.D5, N.Fs5, N.A5, N.D6, N.Fs6, N.A6].forEach((f, i) => this.bell(f, at + 0.25 + i * 0.12, 0.1, 1.9, (i - 2.5) * 0.2));

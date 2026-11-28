@@ -4,6 +4,7 @@
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import QRCode from 'qrcode';
 import { BOOKS } from '../../shared/books.ts';
+import type { MostUsedVerse } from '../../shared/types.ts';
 import type { RuleSet, Tier } from '../../shared/rules.ts';
 import { RULE_SPECS, validateRules } from '../../shared/rules.ts';
 import type { Game, PlayerRow } from '../app/game.ts';
@@ -142,6 +143,12 @@ export class Desk {
 
   // -------------------------------------------------------------------------------------------
   // Today (rule 16.1)
+
+  /** The verses players hop to most: rule-free, just a top ten for the Scribes to see. */
+  mostUsed(range: 'day' | 'week' | 'all'): MostUsedVerse[] {
+    const date = newestOpenDate(this.now());
+    return this.game.journal.mostUsed(range, date, addDays(date, -6));
+  }
 
   today(): unknown {
     const at = this.now();

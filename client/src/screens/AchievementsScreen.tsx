@@ -46,7 +46,7 @@ export function AchievementsScreen() {
                       const got = h.achievements.find((x) => x.id === a.id);
                       return (
                         <div key={a.id} className={`badge ${got ? 'earned' : ''}`}>
-                          <span className="medal-small" style={got ? undefined : { background: 'rgba(255,236,205,.08)', color: 'var(--ink-3)', boxShadow: 'inset 0 0 0 1px var(--line)' }}><Icon name={got ? 'sparkle' : 'ribbon'} /></span>
+                          <span className="medal-small" style={got ? undefined : { background: 'rgba(255,236,205,.08)', color: 'var(--ink-3)', boxShadow: 'inset 0 0 0 1px var(--line)' }}><Icon name={a.icon ?? 'sparkle'} /></span>
                           <span><b>{a.name}</b><span>{a.how}{a.cite ? ` · ${a.cite}` : ''}{got ? ` · earned ${got.earnedOn}` : ''}</span></span>
                         </div>
                       );

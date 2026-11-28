@@ -1,6 +1,6 @@
 // Talking to the game server. The server decides everything; the client only shows it.
 import type {
-  ActionResult, ConcordanceView, FinaleView, HistoryView, JourneyView, PlayerView, RevelationView, StandingsView, TodayView,
+  ActionResult, ConcordanceView, FinaleView, HistoryView, JournalView, JourneyView, PlayerView, RevelationView, StandingsView, TodayView,
 } from '../../shared/types.ts';
 
 export class ApiError extends Error {
@@ -22,7 +22,7 @@ export const tz: string = (() => {
   }
 })();
 
-async function call<T>(method: 'GET' | 'POST', url: string, body?: unknown): Promise<T> {
+async function call<T>(method: 'GET' | 'POST' | 'PUT' | 'DELETE', url: string, body?: unknown): Promise<T> {
   let res: Response;
   try {
     res = await fetch(url, {
@@ -88,6 +88,10 @@ export const api = {
   login: (name: string, password: string) => call<{ player: PlayerView; notices: string[] }>('POST', '/api/account/login', { name, password }),
   logout: () => call<{ ok: true }>('POST', '/api/account/logout', {}),
   deleteAccount: () => call<{ ok: true }>('POST', '/api/account/delete', {}),
+  journal: () => call<JournalView>('GET', '/api/journal'),
+  bookmarks: () => call<{ verses: number[] }>('GET', '/api/bookmarks'),
+  saveBookmark: (verse: number, note?: string, source?: string) => call<{ verse: number; note: string }>('PUT', '/api/bookmarks', { verse, note, source }),
+  removeBookmark: (verse: number) => call<{ ok: true }>('DELETE', `/api/bookmarks/${verse}`),
   track: (type: string) => call<{ ok: true }>('POST', '/api/track', { type }).catch(() => undefined),
 };
 

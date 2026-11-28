@@ -212,6 +212,39 @@ CREATE TABLE IF NOT EXISTS badge_awards (
   PRIMARY KEY (journey_id, id)
 );
 CREATE INDEX IF NOT EXISTS badge_awards_player ON badge_awards(player_id, id);
+CREATE TABLE IF NOT EXISTS bookmarks (
+  player_id TEXT NOT NULL,
+  verse INTEGER NOT NULL,
+  note TEXT NOT NULL DEFAULT '',
+  source TEXT,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  PRIMARY KEY (player_id, verse)
+);
+CREATE TABLE IF NOT EXISTS verse_uses (
+  journey_id TEXT NOT NULL,
+  idx INTEGER NOT NULL,
+  player_id TEXT NOT NULL,
+  verse INTEGER NOT NULL,
+  kind TEXT NOT NULL,
+  date TEXT NOT NULL,
+  at INTEGER NOT NULL,
+  PRIMARY KEY (journey_id, idx)
+);
+CREATE INDEX IF NOT EXISTS verse_uses_player ON verse_uses(player_id, verse);
+CREATE INDEX IF NOT EXISTS verse_uses_date ON verse_uses(date, verse);
+CREATE TABLE IF NOT EXISTS minigame_plays (
+  player_id TEXT NOT NULL,
+  game TEXT NOT NULL,
+  date TEXT NOT NULL,
+  started_at INTEGER NOT NULL,
+  finished_at INTEGER,
+  state TEXT NOT NULL,
+  score INTEGER,
+  won INTEGER,
+  PRIMARY KEY (player_id, game, date)
+);
+CREATE INDEX IF NOT EXISTS minigame_plays_day ON minigame_plays(game, date);
 CREATE TABLE IF NOT EXISTS alerts (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   at INTEGER NOT NULL,
@@ -234,6 +267,14 @@ export class Db {
     this.raw = new DatabaseSync(file);
     this.raw.exec('PRAGMA journal_mode = WAL; PRAGMA synchronous = NORMAL; PRAGMA foreign_keys = ON; PRAGMA busy_timeout = 5000;');
     this.raw.exec(SCHEMA);
+    this.addColumn('players', 'plus', 'INTEGER NOT NULL DEFAULT 0');
+    this.addColumn('players', 'practice_used', 'INTEGER NOT NULL DEFAULT 0');
+  }
+
+  /** Adds a column to a table made by an earlier version, once. */
+  private addColumn(table: string, column: string, type: string): void {
+    const cols = this.raw.prepare(`PRAGMA table_info(${table})`).all() as { name: string }[];
+    if (!cols.some((c) => c.name === column)) this.raw.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${type}`);
   }
 
   private stmt(sql: string): StatementSync {

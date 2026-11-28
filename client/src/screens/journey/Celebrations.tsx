@@ -1,8 +1,9 @@
-// The big moments: a Golden Nugget found, and coming home.
-import { useEffect, useMemo, useState } from 'react';
+// The big moments: a Golden Nugget found, and coming home through the father's door.
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { FinaleView } from '../../../../shared/types.ts';
 import { haptics } from '../../fx/haptics.ts';
 import { sound } from '../../fx/sound.ts';
+import { isReducedMotion } from '../../prefs.ts';
 import { useCountTo } from '../../ui/base.tsx';
 import { Icon } from '../../ui/icons.tsx';
 
@@ -26,37 +27,72 @@ export function NuggetFlash({ onDone }: { onDone: () => void }) {
   );
 }
 
-/** Coming home: the light breaks, the house rises, the manna counts up, then the finale. */
+/** Lays a fading veil of the doorway's light over whatever comes next, so the light carries into the finale. */
+function carryLight(): void {
+  const veil = document.createElement('div');
+  veil.className = 'light-veil';
+  document.body.appendChild(veil);
+  veil.addEventListener('animationend', () => veil.remove(), { once: true });
+  window.setTimeout(() => veil.remove(), 1500);
+}
+
+/**
+ * Coming home: the father's door, over the page. It swings open, light bursts through and spills
+ * across the floor, the welcome and the manna rise in the light, and then the light fills the
+ * screen and carries into the finale.
+ */
 export function HomeCelebration({ finale, onDone }: { finale: FinaleView; onDone: () => void }) {
   const [shown, setShown] = useState(0);
   const total = useCountTo(shown, 1300);
+  const [leaving, setLeaving] = useState(false);
+  const done = useRef(false);
+  const finish = useCallback(() => {
+    if (done.current) return;
+    done.current = true;
+    carryLight();
+    onDone();
+  }, [onDone]);
   useEffect(() => {
-    sound.home(0);
-    haptics.home();
-    const a = window.setTimeout(() => setShown(finale.manna), 700);
-    const b = window.setTimeout(() => {
-      sound.achievement();
-      haptics.play([10, 40, 18]);
-    }, 2100);
-    const c = window.setTimeout(onDone, 3600);
-    return () => [a, b, c].forEach((t) => window.clearTimeout(t));
-  }, [finale.manna, onDone]);
-  const confetti = useMemo(() => Array.from({ length: 60 }, (_, i) => ({ left: (i * 53) % 100, delay: 0.3 + (i % 12) * 0.09, dur: 2 + ((i * 17) % 10) / 10, hue: i % 4, rot: (i * 47) % 360 })), []);
+    const reduced = isReducedMotion();
+    sound.creak(0.15);
+    haptics.play([12, 60, 8]);
+    const t = [
+      window.setTimeout(() => { sound.swell(); sound.home(0.15); haptics.home(); }, reduced ? 0 : 650),
+      window.setTimeout(() => setShown(finale.manna), reduced ? 100 : 1250),
+      window.setTimeout(() => { if (finale.achievements.some((x) => x.badge)) { sound.achievement(); haptics.play([10, 40, 18]); } }, 2500),
+      window.setTimeout(() => setLeaving(true), reduced ? 2600 : 3700),
+      window.setTimeout(finish, reduced ? 2800 : 4250),
+    ];
+    return () => t.forEach((x) => window.clearTimeout(x));
+  }, [finale, finish]);
+  const motes = useMemo(() => Array.from({ length: 14 }, (_, i) => ({ left: 30 + ((i * 37) % 40), delay: 0.9 + (i % 7) * 0.35, dur: 3 + ((i * 13) % 10) / 5, size: 2 + (i % 3) })), []);
+  const golden = finale.path[finale.path.length - 1]?.how === 'golden';
   return (
-    <div className="home-celebration" onPointerDown={onDone} role="status" aria-label={`Welcome home. ${finale.manna} manna.`}>
-      <div className="hc-rays" />
-      <div className="hc-glow" />
-      {confetti.map((c, i) => <i key={i} className={`hc-confetti c${c.hue}`} style={{ left: `${c.left}%`, animationDelay: `${c.delay}s`, animationDuration: `${c.dur}s`, ['--r' as string]: `${c.rot}deg` }} />)}
-      <div className="hc-center">
-        <div className="hc-house"><Icon name="home" size={74} strokeWidth={1.8} /></div>
-        <p className="hc-eyebrow">The day is won</p>
-        <h1 className="hc-title">Welcome <em>home</em></h1>
-        <div className="hc-manna"><Icon name="manna" size={30} /> <span className="tabular">{total}</span> <small>manna</small></div>
-        {finale.calf > 0 && <p className="hc-sub">The Fatted Calf adds {finale.calf}{finale.path[finale.path.length - 1]?.how === 'golden' ? ' by the Golden Road' : ''}</p>}
-        {finale.achievements.filter((a) => a.badge).map((a) => (
-          <div key={a.id} className="hc-badge"><Icon name={a.icon ?? 'sparkle'} size={20} /> {(a.count ?? 1) > 1 ? 'Badge earned again:' : 'New badge:'} <b>{a.name}</b>{(a.count ?? 1) > 1 ? ` \u00d7${a.count}` : ''}</div>
-        ))}
+    <div className={`homecoming ${leaving ? 'leaving' : ''}`} onPointerDown={finish} role="status" aria-label={`Welcome home. ${finale.manna} manna.`}>
+      <div className="hm-dim" />
+      <div className="hm-stage">
+        <div className="hm-glow" />
+        <div className="hm-rays" />
+        <div className="hm-door">
+          <div className="hm-light">
+            {motes.map((m, i) => <i key={i} className="hm-mote" style={{ left: `${m.left}%`, width: m.size, height: m.size, animationDelay: `${m.delay}s`, animationDuration: `${m.dur}s` }} />)}
+          </div>
+          <div className="hm-leaf left"><i className="hm-ring" /></div>
+          <div className="hm-leaf right"><i className="hm-ring" /></div>
+          <div className="hm-arch" />
+        </div>
+        <div className="hm-spill" />
+        <div className="hm-text">
+          <p className="hm-eyebrow">The day is won</p>
+          <h1 className="hm-title">Welcome <em>home</em></h1>
+          <div className="hm-manna"><Icon name="manna" size={26} /> <span className="tabular">{total}</span> <small>manna</small></div>
+          {finale.calf > 0 && <p className="hm-sub">The Fatted Calf adds {finale.calf}{golden ? ' by the Golden Road' : ''}</p>}
+          {finale.achievements.filter((a) => a.badge).map((a) => (
+            <div key={a.id} className="hm-badge"><Icon name={a.icon ?? 'sparkle'} size={18} /> {(a.count ?? 1) > 1 ? 'Badge earned again:' : 'New badge:'} <b>{a.name}</b>{(a.count ?? 1) > 1 ? ` \u00d7${a.count}` : ''}</div>
+          ))}
+        </div>
       </div>
+      <div className="hm-flood" />
     </div>
   );
 }

@@ -1,17 +1,19 @@
 // After the journey (section 13): welcome home or the loss, the trip map, the Emmaus Road,
 // the Book of Numbers and the share card.
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { DIVISIONS } from '../../../shared/books.ts';
 import type { Tier } from '../../../shared/rules.ts';
 import { TIER_NAMES } from '../../../shared/rules.ts';
 import type { Achievement, BookSpan, FinaleView, HopRecord } from '../../../shared/types.ts';
 import { api } from '../api.ts';
 import { useApp } from '../app-store.ts';
+import { haptics } from '../fx/haptics.ts';
 import { sound } from '../fx/sound.ts';
 import { isReducedMotion } from '../prefs.ts';
 import { navigate } from '../router.ts';
 import { TIER_COLOR } from '../theme.ts';
 import { BadgeCard, Medal } from '../ui/Badges.tsx';
+import { BookmarkButton } from '../ui/Bookmark.tsx';
 import { Standings } from '../ui/Standings.tsx';
 import { DotsDeco, LinesDeco, plural, press, useDocumentTitle } from '../ui/base.tsx';
 import { Icon, TierBadge } from '../ui/icons.tsx';
@@ -167,8 +169,8 @@ function Finale({ f }: { f: FinaleView }) {
           <h2 className="display">The trip <em>map</em></h2>
           <TripMap f={f} books={books.length ? books : today?.books ?? []} />
           <h2 className="display">The Emmaus <em>Road</em></h2>
-          <p className="small muted">Every stop in order, from home. The word you came in by is highlighted; the word you left by is underlined.</p>
-          <EmmausRoad f={f} />
+          <p className="small muted">Walk back along your road: tap a stop, or step through with the arrows. The word you came in by is highlighted; the word you left by is underlined.</p>
+          <EmmausRoad f={f} books={books.length ? books : today?.books ?? []} />
           <h2 className="display">The Book of <em>Numbers</em></h2>
           <Numbers f={f} />
         </>
@@ -187,12 +189,44 @@ function Finale({ f }: { f: FinaleView }) {
   );
 }
 
-/** Rule 13.3: all 66 books on one line, each as wide as its share of the Bible, every hop an arc. */
-export function TripMap({ f, books, route }: { f?: FinaleView; books: BookSpan[]; route?: { from: number; to: number; tier: Tier; home: boolean; revisit: boolean; door: string; fromRef: string; toRef: string }[] }) {
-  const W = 1000, H = 150, base = 118;
-  const x = (p: number) => 10 + p * (W - 20);
+type MapHop = { from: number; to: number; tier: Tier; home: boolean; revisit: boolean; door: string; fromRef: string; toRef: string };
+
+const wait = (ms: number) => new Promise<void>((r) => window.setTimeout(r, ms));
+/** Runs fn(t) for t from 0 to 1 over `ms`, one frame at a time; stops early if `alive()` turns false. */
+function tween(ms: number, alive: () => boolean, fn: (t: number) => void): Promise<boolean> {
+  return new Promise((resolve) => {
+    const t0 = performance.now();
+    const step = (now: number) => {
+      if (!alive()) return resolve(false);
+      const t = Math.min(1, (now - t0) / ms);
+      fn(t);
+      if (t < 1) requestAnimationFrame(step);
+      else resolve(true);
+    };
+    requestAnimationFrame(step);
+  });
+}
+const easeInOut = (t: number) => 0.5 - Math.cos(Math.PI * t) / 2;
+
+/**
+ * Rule 13.3: all 66 books on one line, each as wide as its share of the Bible, every hop an arc.
+ * When the map comes into view (and whenever it is tapped) the ball replays the trip: it hops each
+ * arc in turn, drawing it as it goes, and skips twice where it lands.
+ */
+export function TripMap({ f, books, route }: { f?: FinaleView; books: BookSpan[]; route?: MapHop[] }) {
+  const W = 1000, H = 236, base = 190, R = 9;
+  const ground = base - 5;
+  const x = (p: number) => 14 + p * (W - 28);
   const [sel, setSel] = useState<number | null>(null);
-  const hops = useMemo(() => {
+  const [cur, setCur] = useState<number | null>(null);
+  const [phase, setPhase] = useState<'idle' | 'playing' | 'done'>('idle');
+  const wrap = useRef<HTMLDivElement>(null);
+  const ball = useRef<SVGGElement>(null);
+  const shadow = useRef<SVGEllipseElement>(null);
+  const label = useRef<SVGTextElement>(null);
+  const arcs = useRef<(SVGPathElement | null)[]>([]);
+  const run = useRef(0);
+  const hops = useMemo<MapHop[]>(() => {
     if (route) return route;
     const path: HopRecord[] = f?.path ?? [];
     const stops = f?.road ?? [];
@@ -200,7 +234,6 @@ export function TripMap({ f, books, route }: { f?: FinaleView; books: BookSpan[]
   }, [f, route]);
   const homePos = f?.road[0]?.position ?? hops[0]?.from ?? 0;
   const homeRef = f?.home.ref ?? hops[0]?.fromRef ?? '';
-  const animate = !isReducedMotion();
   const divisions = useMemo(() => {
     const out: { name: string; start: number; end: number }[] = [];
     for (const d of DIVISIONS) {
@@ -209,116 +242,344 @@ export function TripMap({ f, books, route }: { f?: FinaleView; books: BookSpan[]
     }
     return out;
   }, [books]);
-  const s = sel !== null ? hops[sel] : null;
+  // each arc as tall as its reach, but never taller than the card
+  const geo = useMemo(() => hops.map((h) => {
+    const a = x(h.from), b = x(h.to);
+    const reach = Math.min(1, Math.abs(b - a) / (W - 28));
+    const lift = 18 + (ground - 18 - 20) * Math.pow(reach, 0.6);
+    return { a, b, lift, d: `M${a.toFixed(1)} ${ground} Q ${((a + b) / 2).toFixed(1)} ${(ground - lift * 2).toFixed(1)} ${b.toFixed(1)} ${ground}` };
+  }), [hops]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const placeBall = (px: number, py: number, sx = 1, sy = 1) => {
+    ball.current?.setAttribute('transform', `translate(${px.toFixed(1)} ${py.toFixed(1)}) scale(${sx.toFixed(3)} ${sy.toFixed(3)})`);
+    const h = Math.max(0, ground - py);
+    shadow.current?.setAttribute('cx', px.toFixed(1));
+    shadow.current?.setAttribute('rx', (R * (1 - Math.min(0.6, h / 260))).toFixed(1));
+    shadow.current?.setAttribute('opacity', (0.45 * (1 - Math.min(0.8, h / 200))).toFixed(2));
+  };
+  const showLabel = (px: number, text: string) => {
+    const el = label.current;
+    if (!el) return;
+    el.textContent = text;
+    el.setAttribute('x', Math.min(W - 70, Math.max(70, px)).toFixed(1));
+    el.animate([{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }], { duration: 260, fill: 'forwards' });
+  };
+  const drawAll = (shown: boolean) => arcs.current.forEach((p) => {
+    if (!p) return;
+    const L = p.getTotalLength();
+    p.style.strokeDasharray = `${L}`;
+    p.style.strokeDashoffset = shown ? '0' : `${L}`;
+  });
+
+  const play = useCallback(async () => {
+    if (!hops.length) return;
+    if (isReducedMotion()) {
+      drawAll(true);
+      setPhase('done');
+      return;
+    }
+    const token = ++run.current;
+    const alive = () => run.current === token;
+    setPhase('playing');
+    setSel(null);
+    drawAll(false);
+    placeBall(x(hops[0].from), ground);
+    if (label.current) label.current.style.opacity = '0';
+    await wait(300);
+    for (let i = 0; i < hops.length; i++) {
+      if (!alive()) return;
+      const h = hops[i], g = geo[i], path = arcs.current[i];
+      if (!path) continue;
+      setCur(i);
+      const L = path.getTotalLength();
+      // crouch
+      if (!(await tween(90, alive, (t) => placeBall(g.a, ground, 1 + 0.16 * t, 1 - 0.18 * t)))) return;
+      sound.door(h.home ? 'loaf' : h.tier);
+      // the hop, drawing the arc behind the ball
+      const ms = 520 + 760 * Math.sqrt(Math.min(1, Math.abs(g.b - g.a) / (W - 28)));
+      if (!(await tween(ms, alive, (t) => {
+        const e = easeInOut(t);
+        const pt = path.getPointAtLength(L * e);
+        path.style.strokeDashoffset = `${L * (1 - e)}`;
+        const st = 1 + 0.1 * Math.sin(Math.PI * t);
+        placeBall(pt.x, pt.y, 1 / st, st);
+      }))) return;
+      path.style.strokeDashoffset = '0';
+      sound.land(h.home ? 'home' : h.tier);
+      haptics.play(h.home ? [14, 40, 20] : 10);
+      showLabel(g.b, h.toRef);
+      // land, then two little skips
+      if (!(await tween(90, alive, (t) => placeBall(g.b, ground, 1 + 0.24 * Math.sin(Math.PI * t), 1 - 0.26 * Math.sin(Math.PI * t))))) return;
+      for (const [hgt, d] of [[16, 210], [6, 150]] as const) {
+        if (!(await tween(d, alive, (t) => placeBall(g.b, ground - hgt * 4 * t * (1 - t), 1, 1)))) return;
+        if (!(await tween(60, alive, (t) => placeBall(g.b, ground, 1 + 0.12 * Math.sin(Math.PI * t), 1 - 0.12 * Math.sin(Math.PI * t))))) return;
+      }
+      await wait(120);
+    }
+    if (!alive()) return;
+    setCur(null);
+    setPhase('done');
+    if (hops[hops.length - 1].home) sound.home();
+  }, [hops, geo]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // play the trip the first time the map comes into view
+  useEffect(() => {
+    const el = wrap.current;
+    if (!el || !hops.length) return;
+    if (isReducedMotion() || typeof IntersectionObserver === 'undefined') {
+      setPhase('done');
+      return;
+    }
+    const io = new IntersectionObserver((entries) => {
+      if (entries.some((e) => e.isIntersecting)) {
+        io.disconnect();
+        void play();
+      }
+    }, { threshold: 0.6 });
+    io.observe(el);
+    return () => {
+      io.disconnect();
+      run.current++;
+    };
+  }, [hops, play]);
+  useEffect(() => {
+    if (phase === 'done') {
+      drawAll(true);
+      const last = hops[hops.length - 1];
+      if (last) placeBall(x(last.to), ground);
+    }
+  }, [phase]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const shownHop = cur !== null ? cur : sel;
+  const s = shownHop !== null ? hops[shownHop] : null;
+  const replay = () => { press(); void play(); };
   return (
-    <div className="tripmap card cream" style={{ padding: '0.9rem 0.8rem 0.7rem' }}>
-      <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`A map of the trip across the Bible: ${hops.length} hops from ${homeRef}.`}>
+    <div ref={wrap} className={`tripmap card cream ${phase}`} style={{ padding: '0.9rem 0.8rem 0.7rem' }}>
+      <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`A map of the trip across the Bible: ${hops.length} hops from ${homeRef}. Tap to replay it.`} onClick={replay}>
+        <defs>
+          <radialGradient id="map-ball" cx="0.34" cy="0.3" r="0.75">
+            <stop offset="0" stopColor="#ffe3d2" /><stop offset="0.2" stopColor="#ff8a5c" /><stop offset="0.5" stopColor="#e3542a" /><stop offset="0.8" stopColor="#b7310f" /><stop offset="1" stopColor="#6e1904" />
+          </radialGradient>
+        </defs>
         {books.map((b, i) => (
           <rect key={b.name} x={x(b.start)} y={base - 5} width={Math.max(0.6, x(b.end) - x(b.start) - 0.8)} height={10} rx={1.5} fill={i % 2 ? '#d9bf94' : '#e7d2ad'} />
         ))}
         {divisions.map((d) => <line key={d.name} x1={x(d.start)} x2={x(d.start)} y1={base - 10} y2={base + 9} stroke="#9c7a4b" strokeWidth={1} />)}
-        {hops.map((h, i) => {
-          const a = x(h.from), b = x(h.to);
-          const lift = 14 + Math.abs(b - a) * 0.19;
-          const d = `M${a} ${base - 5} Q ${(a + b) / 2} ${base - 5 - lift * 2} ${b} ${base - 5}`;
-          const len = Math.abs(b - a) + lift * 2.2;
-          return (
-            <g key={i}>
-              <path
-                className={`arc ${sel === i ? 'sel' : ''}`}
-                d={d}
-                stroke={h.home ? TIER_COLOR.home : TIER_COLOR[h.tier]}
-                strokeWidth={h.home ? 3.4 : 2.4}
-                strokeDasharray={animate ? len : undefined}
-                strokeDashoffset={animate ? len : undefined}
-                style={animate ? { animation: `draw 0.55s ease-out ${0.15 + i * 0.22}s forwards` } : undefined}
-                opacity={h.revisit ? 0.42 : 1}
-              />
-              <path className="hit" d={d} onClick={() => { press(); setSel(sel === i ? null : i); }} />
-            </g>
-          );
-        })}
-        <style>{`@keyframes draw { to { stroke-dashoffset: 0; } }`}</style>
-        {hops.map((h, i) => <circle key={`s${i}`} cx={x(h.to)} cy={base - 5} r={h.home ? 0 : 3.2} fill="#fffaf0" stroke={TIER_COLOR[h.tier]} strokeWidth={1.8} />)}
-        <circle cx={x(homePos)} cy={base - 5} r={5.5} fill={TIER_COLOR.home} stroke="#fffaf0" strokeWidth={2} />
-        <text x={x(homePos)} y={base + 26} textAnchor={homePos < 0.15 ? 'start' : homePos > 0.85 ? 'end' : 'middle'} fontSize="11" fontFamily="Poppins, sans-serif" fontWeight="600" fill={TIER_COLOR.home}>
+        {hops.map((h, i) => (
+          <g key={i}>
+            <path
+              ref={(el) => { arcs.current[i] = el; }}
+              className={`arc ${shownHop === i ? 'sel' : ''} ${h.revisit ? 'revisit' : ''}`}
+              d={geo[i].d}
+              stroke={h.home ? TIER_COLOR.home : TIER_COLOR[h.tier]}
+              strokeWidth={h.home ? 3.6 : 2.6}
+            />
+            <path className="hit" d={geo[i].d} onClick={(e) => { e.stopPropagation(); press(); if (phase !== 'playing') setSel(sel === i ? null : i); }} />
+          </g>
+        ))}
+        {hops.map((h, i) => <circle key={`s${i}`} cx={x(h.to)} cy={ground} r={h.home ? 0 : 3.4} fill="#fffaf0" stroke={TIER_COLOR[h.tier]} strokeWidth={1.8} />)}
+        <circle cx={x(homePos)} cy={ground} r={5.5} fill={TIER_COLOR.home} stroke="#fffaf0" strokeWidth={2} />
+        <text x={x(homePos)} y={base + 30} textAnchor={homePos < 0.15 ? 'start' : homePos > 0.85 ? 'end' : 'middle'} fontSize="13" fontFamily="Poppins, sans-serif" fontWeight="600" fill="#9a6c0c">
           {homeRef} · home
         </text>
+        <text ref={label} className="map-label" y={ground - 36} textAnchor="middle" />
+        {hops.length > 0 && (
+          <>
+            <ellipse ref={shadow} className="map-shadow" cx={x(homePos)} cy={ground + 1} rx={R} ry={2.6} fill="#3b1f12" opacity={0.45} />
+            <g ref={ball} className="map-ball" transform={`translate(${x(homePos)} ${ground})`}>
+              <circle cx={0} cy={-R} r={R} fill="url(#map-ball)" />
+              <ellipse cx={-3} cy={-R - 3.4} rx={2.8} ry={1.7} fill="#fff" opacity={0.85} transform={`rotate(-30 -3 ${-R - 3.4})`} />
+            </g>
+          </>
+        )}
       </svg>
       <div className="divs" style={{ gridTemplateColumns: divisions.map((d) => `${((d.end - d.start) * 100).toFixed(2)}fr`).join(' ') }} aria-hidden="true">
-        {divisions.map((d) => <span key={d.name}>{d.name === 'Gospels & Acts' ? 'Gospels' : d.name}</span>)}
+        {divisions.map((d) => <span key={d.name}>{d.end - d.start < 0.03 ? '' : d.name === 'Gospels & Acts' ? 'Gospels' : d.name}</span>)}
       </div>
       <div className="info" aria-live="polite">
         {s ? (
           <>
             <TierBadge tier={s.home ? 'home' : s.tier} size={22} />
-            <span>
+            <span className="info-text">
+              {cur !== null && <b className="info-step">Hop {cur + 1} of {hops.length} · </b>}
               <b>{s.fromRef}</b> → <b>{s.toRef}</b> through &ldquo;{pretty(s.door)}&rdquo; ({s.home ? 'home' : TIER_NAMES[s.tier]}{s.revisit ? ', a return visit' : ''})
             </span>
           </>
         ) : (
-          <span className="muted small">Tap an arc to see where it went.</span>
+          <span className="muted small info-text">{phase === 'playing' ? 'Setting off from home…' : 'Tap the map to watch the trip again, or tap an arc to see where it went.'}</span>
+        )}
+        {hops.length > 0 && phase !== 'playing' && (
+          <button className="map-replay" onClick={replay} aria-label="Replay the trip"><Icon name="hop" size="1rem" strokeWidth={2.4} /> Replay</button>
         )}
       </div>
     </div>
   );
 }
 
-/** Rule 13.4: the replay, stop by stop. */
-function EmmausRoad({ f }: { f: FinaleView }) {
-  const [shown, setShown] = useState(1);
-  useEffect(() => {
-    if (isReducedMotion() || f.road.length <= 1) {
-      setShown(f.road.length);
-      return;
+/** A verse reference with the book's short name, for the labels along the road. */
+function shortRef(ref: string, books: BookSpan[]): string {
+  const book = books.filter((b) => ref.startsWith(b.name + ' ')).sort((x, y) => y.name.length - x.name.length)[0];
+  return book ? `${book.short} ${ref.slice(book.name.length + 1)}` : ref;
+}
+
+const SP = 84, PAD = 48, ROAD_H = 128;
+
+/**
+ * Rule 13.4: the replay, as a road. Every stop of the journey is a milestone along a winding road;
+ * tap one (or step with the arrows, or swipe the card) and the ball hops there and the stop's verse
+ * opens below, with the word you came in by and the word you left by.
+ */
+function EmmausRoad({ f, books }: { f: FinaleView; books: BookSpan[] }) {
+  const n = f.road.length;
+  const [i, setI] = useState(0);
+  const [dir, setDir] = useState(1);
+  const scroller = useRef<HTMLDivElement>(null);
+  const ballEl = useRef<HTMLSpanElement>(null);
+  const prevAt = useRef<{ x: number; y: number } | null>(null);
+  const swipe = useRef<number | null>(null);
+  const roadW = PAD * 2 + Math.max(0, n - 1) * SP;
+  const pts = useMemo(() => f.road.map((_, k) => ({ x: PAD + k * SP, y: 58 + Math.sin(k * 1.15 + 0.6) * 18 })), [f]);
+  const roadD = useMemo(() => {
+    if (!pts.length) return '';
+    let d = `M${pts[0].x - PAD} ${pts[0].y} L${pts[0].x} ${pts[0].y}`;
+    for (let k = 1; k < pts.length; k++) {
+      const a = pts[k - 1], b = pts[k];
+      d += ` C${a.x + SP / 2} ${a.y} ${b.x - SP / 2} ${b.y} ${b.x} ${b.y}`;
     }
-    let i = 1;
-    const id = window.setInterval(() => {
-      i++;
-      setShown(i);
-      if (i >= f.road.length) window.clearInterval(id);
-    }, 420);
-    return () => window.clearInterval(id);
-  }, [f]);
+    const last = pts[pts.length - 1];
+    return `${d} L${last.x + PAD} ${last.y}`;
+  }, [pts]);
+
+  const go = (k: number) => {
+    const next = Math.max(0, Math.min(n - 1, k));
+    if (next === i) return;
+    press();
+    setDir(next > i ? 1 : -1);
+    setI(next);
+    const hop = f.road[next].hop;
+    sound.door(hop ? (hop.home ? 'loaf' : hop.tier) : 'loaf');
+  };
+
+  // keep the chosen stop in view, and hop the ball over to it
+  useLayoutEffect(() => {
+    const at = pts[i];
+    const sc = scroller.current;
+    if (!at || !sc) return;
+    sc.scrollTo({ left: Math.max(0, at.x - sc.clientWidth / 2), behavior: isReducedMotion() ? 'auto' : 'smooth' });
+    const from = prevAt.current;
+    prevAt.current = at;
+    const el = ballEl.current;
+    if (!el || !from || isReducedMotion()) return;
+    const dx = from.x - at.x, dy = from.y - at.y;
+    const lift = 34 + Math.min(40, Math.abs(dx) * 0.12);
+    el.animate([
+      { transform: `translate(${dx}px, ${dy}px) scale(1.1, 0.88)` },
+      { transform: `translate(${dx * 0.5}px, ${dy * 0.5 - lift}px) scale(0.94, 1.08)`, offset: 0.5 },
+      { transform: 'translate(0, 0) scale(1.18, 0.82)', offset: 0.86 },
+      { transform: 'none' },
+    ], { duration: 420 + Math.min(380, Math.abs(dx) * 0.6), easing: 'cubic-bezier(.3,.6,.3,1)' });
+  }, [i, pts]);
+
+  if (!n) return null;
+  const stop = f.road[i];
+  const hop = stop.hop;
+  const next = f.road[i + 1]?.hop;
+  const tierOf = (k: number) => {
+    const h = f.road[k].hop;
+    return h ? (h.home ? 'home' : h.tier) : 'home';
+  };
   return (
-    <div className="road">
-      {f.road.slice(0, shown).map((stop, i) => {
-        const hop = stop.hop;
-        return (
-          <div key={i}>
-            {hop && (
-              <div className="road-hop">
-                <TierBadge tier={hop.home ? 'home' : hop.tier} size={22} />
-                <span>
-                  through <b>&ldquo;{pretty(hop.doorWord)}&rdquo;</b>
-                  {hop.forms.length && !hop.forms.includes(hop.doorWord.toLowerCase()) ? <> (found as &ldquo;{pretty(hop.forms[0])}&rdquo;)</> : null}
-                  {' '}· {hop.home ? 'home' : TIER_NAMES[hop.tier]} · <b>+{hop.manna + hop.calf}</b>
-                </span>
-                <span className="tags">
-                  {hop.refScore === 'exact' && <span className="pill soft">exact reference ×{hop.multiplier}</span>}
-                  {hop.refScore === 'chapter' && <span className="pill soft">right chapter ×{hop.multiplier}</span>}
-                  {hop.refScore === 'book' && <span className="pill soft">right book ×{hop.multiplier}</span>}
-                  {hop.revisit && <span className="pill soft">return visit, {hop.oil} oil</span>}
-                  {hop.widow > 0 && <span className="pill soft"><Icon name="lamp" size="0.8rem" /> +{hop.widow} oil</span>}
-                  {hop.calf > 0 && <span className="pill soft">Fatted Calf +{hop.calf}</span>}
-                </span>
-              </div>
-            )}
-            <div className={`road-stop tier-${hop ? (hop.home ? 'home' : hop.tier) : 'home'}`}>
-              <div className="ref">
-                {(i === 0 || hop?.home) && <Icon name="home" size="1rem" strokeWidth={2.4} style={{ color: 'var(--gold)' }} />}
-                {stop.ref}
-                <span className="pill line" style={{ marginLeft: 'auto', fontSize: '0.7rem' }}>{stop.wording.toUpperCase()}</span>
-              </div>
-              <p className="text">
-                {stop.tokens.map((t, k) => (t.m ? <span key={k} className={t.m}>{pretty(t.s)}</span> : <span key={k}>{pretty(t.s)}</span>))}
-              </p>
-              {stop.cameByIn && <p className="note">The word you came in by is in the {stop.cameByIn.toUpperCase()} wording of this verse.</p>}
-              {stop.leftByIn && <p className="note">The word you left by is in the {stop.leftByIn.toUpperCase()} wording of this verse.</p>}
+    <div className="emmaus" onKeyDown={(e) => { if (e.key === 'ArrowRight') go(i + 1); if (e.key === 'ArrowLeft') go(i - 1); }}>
+      <div className="em-scroller" ref={scroller}>
+        <div className="em-road" style={{ width: roadW, height: ROAD_H }}>
+          <svg width={roadW} height={ROAD_H} aria-hidden="true">
+            <path d={roadD} className="em-road-edge" />
+            <path d={roadD} className="em-road-body" />
+            <path d={roadD} className="em-road-line" />
+          </svg>
+          {f.road.map((st, k) => {
+            const t = tierOf(k);
+            const isHome = k === 0 || st.hop?.home;
+            return (
+              <button
+                key={k}
+                className={`em-stop tier-${t} ${k === i ? 'on' : ''} ${k < i ? 'past' : ''}`}
+                style={{ left: pts[k].x, top: pts[k].y, ['--d' as string]: `${k * 70}ms` }}
+                onClick={() => go(k)}
+                aria-label={`Stop ${k + 1} of ${n}: ${st.ref}`}
+                aria-current={k === i ? 'step' : undefined}
+              >
+                <span className="em-dot">{isHome ? <Icon name="home" size="1.05em" strokeWidth={2.4} /> : k}</span>
+                <span className="em-ref">{shortRef(st.ref, books)}</span>
+              </button>
+            );
+          })}
+          <span ref={ballEl} className="em-ball" style={{ left: pts[i].x, top: pts[i].y }} aria-hidden="true"><i /></span>
+        </div>
+      </div>
+
+      <div
+        key={i}
+        className={`road-stop em-card tier-${tierOf(i)} ${dir > 0 ? 'from-right' : 'from-left'}`}
+        onPointerDown={(e) => { swipe.current = e.clientX; }}
+        onPointerUp={(e) => {
+          if (swipe.current === null) return;
+          const dx = e.clientX - swipe.current;
+          swipe.current = null;
+          if (Math.abs(dx) > 50) go(i + (dx < 0 ? 1 : -1));
+        }}
+      >
+        <div className="em-head">
+          <span className="em-step">{i === 0 ? 'Home' : hop?.home ? 'Home again' : `Stop ${i}`} · {i + 1} of {n}</span>
+          <span className="pill line" style={{ fontSize: '0.7rem' }}>{stop.wording.toUpperCase()}</span>
+          <BookmarkButton verse={stop.id} refLabel={stop.ref} source="road" className="on-paper" />
+        </div>
+        <div className="ref">
+          {(i === 0 || hop?.home) && <Icon name="home" size="1rem" strokeWidth={2.4} style={{ color: 'var(--gold)' }} />}
+          {stop.ref}
+        </div>
+        <p className="text">
+          {stop.tokens.map((t, k) => (t.m ? <span key={k} className={t.m}>{pretty(t.s)}</span> : <span key={k}>{pretty(t.s)}</span>))}
+        </p>
+        {stop.cameByIn && <p className="note">The word you came in by is in the {stop.cameByIn.toUpperCase()} wording of this verse.</p>}
+        {stop.leftByIn && <p className="note">The word you left by is in the {stop.leftByIn.toUpperCase()} wording of this verse.</p>}
+        <div className="em-doors">
+          {hop ? (
+            <div className="em-door">
+              <TierBadge tier={hop.home ? 'home' : hop.tier} size={24} />
+              <span>
+                Came in through <b>&ldquo;{pretty(hop.doorWord)}&rdquo;</b>
+                {hop.forms.length && !hop.forms.includes(hop.doorWord.toLowerCase()) ? <> (as &ldquo;{pretty(hop.forms[0])}&rdquo;)</> : null}
+                {' '}· {hop.home ? 'home' : TIER_NAMES[hop.tier]} · <b>+{hop.manna + hop.calf}</b> manna
+              </span>
             </div>
-          </div>
-        );
-      })}
+          ) : (
+            <div className="em-door"><TierBadge tier="home" size={24} /><span>Where the day began.</span></div>
+          )}
+          {next && (
+            <div className="em-door out">
+              <Icon name="hop" size="1.1rem" strokeWidth={2.4} />
+              <span>Left by <b>&ldquo;{pretty(next.doorWord)}&rdquo;</b> for {next.toRef}</span>
+            </div>
+          )}
+          {hop && (
+            <span className="tags">
+              {hop.refScore === 'exact' && <span className="pill soft">exact reference ×{hop.multiplier}</span>}
+              {hop.refScore === 'chapter' && <span className="pill soft">right chapter ×{hop.multiplier}</span>}
+              {hop.refScore === 'book' && <span className="pill soft">right book ×{hop.multiplier}</span>}
+              {hop.revisit && <span className="pill soft">return visit, {hop.oil} oil</span>}
+              {hop.widow > 0 && <span className="pill soft"><Icon name="lamp" size="0.8rem" /> +{hop.widow} oil</span>}
+              {hop.calf > 0 && <span className="pill soft">Fatted Calf +{hop.calf}</span>}
+            </span>
+          )}
+        </div>
+      </div>
+
+      <div className="em-nav">
+        <button className="btn ghost" disabled={i === 0} onClick={() => go(i - 1)} aria-label="Previous stop"><Icon name="lookback" size="1rem" strokeWidth={2.4} /> Back</button>
+        <span className="em-pips" aria-hidden="true">{f.road.map((_, k) => <i key={k} className={k === i ? 'on' : ''} />)}</span>
+        <button className="btn" disabled={i === n - 1} onClick={() => go(i + 1)} aria-label="Next stop">Next <Icon name="hop" size="1rem" strokeWidth={2.4} /></button>
+      </div>
     </div>
   );
 }

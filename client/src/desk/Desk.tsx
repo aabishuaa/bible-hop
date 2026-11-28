@@ -216,10 +216,44 @@ function Today({ admin }: { admin: Admin }) {
       <div className="card cream" style={{ marginTop: '1rem' }}>
         <b>Disputes waiting: {data.disputesWaiting}</b>
       </div>
+      <TopVerses />
       <h2 className="display" style={{ fontSize: '1.5rem', marginTop: '1.4rem' }}>Alerts</h2>
       {data.alerts.length === 0 && <p className="muted">Nothing needs attention.</p>}
       {data.alerts.map((a: Any, i: number) => <Msg key={i} tone={a.level === 'urgent' ? 'bad' : a.level === 'warn' ? 'warn' : 'info'} text={a.text} />)}
     </>
+  );
+}
+
+/** The ten verses players hop to most, today, this week or ever. */
+function TopVerses() {
+  const [range, setRange] = useState<'day' | 'week' | 'all'>('week');
+  const { data, err } = useLoad(() => get<{ verses: Any[] }>(`/api/desk/verses/top?${q({ range })}`), [range]);
+  return (
+    <div className="card cream" style={{ marginTop: '1rem' }}>
+      <div className="desk-head" style={{ marginBottom: '0.4rem' }}>
+        <b>Most used verses</b>
+        <div className="seg">
+          {(['day', 'week', 'all'] as const).map((r) => <button key={r} aria-pressed={range === r} onClick={() => setRange(r)}>{r === 'day' ? 'Today' : r === 'week' ? '7 days' : 'All time'}</button>)}
+        </div>
+      </div>
+      <Msg tone="bad" text={err} />
+      {data && data.verses.length === 0 && <p className="muted small">No hops counted yet.</p>}
+      {data && data.verses.length > 0 && (
+        <table className="desk-table compact">
+          <thead><tr><th>#</th><th>Verse</th><th>Hops</th><th>Players</th></tr></thead>
+          <tbody>
+            {data.verses.map((v: Any, i: number) => (
+              <tr key={v.verse}>
+                <td>{i + 1}</td>
+                <td><b>{v.ref}</b><div className="muted small" style={{ maxWidth: '34rem' }}>{v.text}</div></td>
+                <td>{v.count}</td>
+                <td>{v.players}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </div>
   );
 }
 

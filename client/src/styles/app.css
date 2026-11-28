@@ -487,7 +487,7 @@ label.field-label { display: block; font-size: 0.78rem; font-weight: 600; letter
 .sharecard .btn.caramel { box-shadow: 0 3px 0 rgba(0, 0, 0, 0.4); }
 
 .tripmap { position: relative; }
-.tripmap svg { display: block; width: 100%; height: auto; overflow: visible; }
+.tripmap svg { display: block; width: 100%; height: auto; overflow: hidden; cursor: pointer; }
 .tripmap .arc { fill: none; stroke-linecap: round; cursor: pointer; transition: stroke-width 0.15s, opacity 0.15s; }
 .tripmap .arc:hover, .tripmap .arc.sel { stroke-width: 4.5; opacity: 1 !important; }
 .tripmap .hit { fill: none; stroke: transparent; stroke-width: 16; cursor: pointer; }
@@ -1111,7 +1111,7 @@ button.glass:focus-visible { outline: 3px solid var(--fish); outline-offset: 3px
 
 /* ================================================================ the wordmark */
 .logo { --ink-logo: #3b1f12; --deep: #26120a; display: inline-grid; justify-items: start; line-height: 1; position: relative; }
-button.logo { all: unset; cursor: pointer; display: inline-grid; justify-items: start; -webkit-tap-highlight-color: transparent; }
+button.logo { all: unset; position: relative; cursor: pointer; display: inline-grid; justify-items: start; -webkit-tap-highlight-color: transparent; }
 button.logo:focus-visible { outline: 3px solid var(--fish); outline-offset: 6px; border-radius: 12px; }
 .logo-bible { font-family: 'Fraunces Variable', var(--font-display); font-style: italic; font-weight: 560; font-variation-settings: 'SOFT' 100; color: var(--ink-logo); letter-spacing: -0.01em; position: relative; z-index: 2; }
 .logo-hop { display: inline-flex; align-items: flex-end; font-family: 'Fraunces Variable', var(--font-display); font-weight: 720; font-variation-settings: 'SOFT' 100; color: var(--ink-logo); letter-spacing: 0.012em; }
@@ -1310,3 +1310,216 @@ button.logo:focus-visible { outline: 3px solid var(--fish); outline-offset: 6px;
 .leather .hop-head .close:hover { background: rgba(255, 236, 205, 0.1); }
 .leather .forms span { color: var(--ink); background: color-mix(in srgb, var(--accent) 34%, rgba(255, 236, 205, 0.06)); }
 .leather .bonus-hint b { color: color-mix(in srgb, var(--accent) 48%, #fff1d6); }
+
+/* ---------------------------------------------------------------- fixes */
+/* .verse-option resets everything with all: unset, so give its text the paper's ink back */
+.verse-option { color: var(--ink); }
+/* milestone medals: the row's small-print rule must not shrink or fade the icon */
+.badge .medal-small { font-size: 1.3rem; color: #3a2408; box-shadow: 0 2px 0 #7a4c09, inset 0 0 0 2px rgba(255, 246, 200, 0.5); }
+.badge .medal-small .icon { width: 1.3rem; height: 1.3rem; }
+/* the dotted trail of the ball's last hop, filling the space beside "Bible" */
+.hop-trail { position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; z-index: 1; transition: opacity 0.25s; }
+.hop-trail circle { fill: #e3bc6c; animation: trail-in 0.35s var(--ease-out) both; transform-box: fill-box; transform-origin: center; }
+@keyframes trail-in { from { opacity: 0; transform: scale(0.2); } }
+.logo.hero:has(.logo-hop.touring) .hop-trail { opacity: 0; }
+.logo-hop { position: relative; z-index: 2; }
+[data-motion='reduced'] .hop-trail circle { animation: none; }
+
+/* ---------------------------------------------------------------- standings on frosted glass */
+.st-wrap { position: relative; isolation: isolate; width: min(calc(100vw - 2rem), 60rem); left: 50%; transform: translateX(-50%); }
+/* warm light behind the glass, so the frost has something to blur */
+.st-wrap::before, .st-wrap::after { content: ''; position: absolute; z-index: -1; border-radius: 50%; filter: blur(28px); pointer-events: none; }
+.st-wrap::before { left: 6%; top: 10%; width: 46%; height: 60%; background: radial-gradient(closest-side, rgba(255, 196, 92, 0.55), rgba(255, 196, 92, 0)); }
+.st-wrap::after { right: 4%; bottom: 6%; width: 42%; height: 55%; background: radial-gradient(closest-side, rgba(214, 92, 52, 0.45), rgba(214, 92, 52, 0)); }
+.leather .standings.card { padding: 1.4rem clamp(1rem, 3vw, 2rem) 1.2rem; border-radius: 2rem;
+  background: linear-gradient(155deg, rgba(255, 246, 230, 0.22), rgba(255, 236, 205, 0.07) 55%, rgba(255, 236, 205, 0.12));
+  -webkit-backdrop-filter: blur(22px) saturate(1.7); backdrop-filter: blur(22px) saturate(1.7);
+  border: 1px solid rgba(255, 244, 225, 0.38);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4), inset 0 0 50px rgba(255, 236, 205, 0.06), 0 26px 54px rgba(0, 0, 0, 0.42); }
+.standings .st-top { font-size: clamp(3.2rem, 13vw, 4.6rem); }
+.standings .st-line { font-size: 1.05rem; }
+.standings .bell { margin-top: 0.6rem; }
+.bell-tick { font: 600 21px var(--font-ui); fill: rgba(255, 240, 215, 0.72); }
+.bell-you-label { font: 700 21px var(--font-ui); fill: #2a1508; }
+.bell-rug line { stroke: #f6dfb2; stroke-opacity: 0.55; stroke-width: 1.6; }
+.bell-line { stroke-dasharray: 1; stroke-dashoffset: 1; animation: bell-draw 1.1s var(--ease-out) 0.1s forwards; }
+@keyframes bell-draw { to { stroke-dashoffset: 0; } }
+.bell-clip { transition: width 0.7s var(--ease-out); animation: bell-sweep 1.2s var(--ease-out) 0.35s backwards; }
+@keyframes bell-sweep { from { width: 0; } }
+.bell-you { animation: bell-you-in 0.5s var(--spring) 1.1s backwards; }
+@keyframes bell-you-in { from { opacity: 0; transform: translateY(-14px); } }
+.st-facts { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.4rem 1.2rem; margin-top: 0.7rem; font-size: 0.82rem; color: var(--ink-2); }
+.st-facts b { color: var(--ink); font-size: 1rem; margin-right: 0.15rem; }
+[data-motion='reduced'] .bell-line { animation: none; stroke-dashoffset: 0; }
+[data-motion='reduced'] .bell-clip, [data-motion='reduced'] .bell-you { animation: none; }
+
+/* ---------------------------------------------------------------- the trip map replay */
+.tripmap .arc.revisit { stroke-dasharray: 7 6; opacity: 0.7; }
+.tripmap.idle .arc { opacity: 0.3; }
+.tripmap .map-label { font: 600 15px var(--font-ui); fill: #6e4332; opacity: 0; pointer-events: none; }
+.tripmap .map-ball, .tripmap .map-shadow { pointer-events: none; }
+.tripmap .info { justify-content: flex-start; }
+.tripmap .info-text { flex: 1; min-width: 0; }
+.tripmap .info-step { color: #9a6c0c; }
+.map-replay { all: unset; cursor: pointer; flex: none; display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.35rem 0.75rem; border-radius: 999px; font-size: 0.78rem; font-weight: 600; color: #fffaf0; background: linear-gradient(180deg, #8a4a2a, #6a3520); box-shadow: 0 2px 0 #3b1f12; }
+.map-replay:active { transform: translateY(2px); box-shadow: 0 0 0 #3b1f12; }
+
+/* ---------------------------------------------------------------- the Emmaus Road */
+.emmaus { display: grid; gap: 0.9rem; }
+.em-scroller { overflow-x: auto; overflow-y: hidden; margin: 0 calc(-1 * var(--page-pad, 1.25rem)); padding: 0 var(--page-pad, 1.25rem); scrollbar-width: none; -webkit-overflow-scrolling: touch; mask-image: linear-gradient(90deg, transparent, #000 1.4rem, #000 calc(100% - 1.4rem), transparent); }
+.em-scroller::-webkit-scrollbar { display: none; }
+.em-road { position: relative; margin: 0 auto; min-width: 100%; }
+.em-road > svg { position: absolute; left: 0; top: 0; overflow: visible; }
+.em-road-edge { fill: none; stroke: rgba(0, 0, 0, 0.35); stroke-width: 30; stroke-linecap: round; transform: translateY(3px); }
+.em-road-body { fill: none; stroke: #5a3420; stroke-width: 26; stroke-linecap: round; }
+.em-road-line { fill: none; stroke: #e3bc6c; stroke-width: 2; stroke-dasharray: 9 9; stroke-linecap: round; opacity: 0.75; }
+.em-stop { all: unset; position: absolute; transform: translate(-50%, -50%); display: grid; justify-items: center; gap: 0.3rem; cursor: pointer; -webkit-tap-highlight-color: transparent; animation: em-pop 0.42s var(--spring) var(--d) backwards; }
+@keyframes em-pop { from { transform: translate(-50%, -50%) scale(0.2); opacity: 0; } }
+.em-dot { display: grid; place-items: center; width: 2.3rem; height: 2.3rem; border-radius: 50%; font-weight: 700; font-size: 0.9rem; color: #fffaf0;
+  background: radial-gradient(circle at 34% 28%, color-mix(in srgb, var(--accent) 50%, #fff), var(--accent) 62%, color-mix(in srgb, var(--accent) 60%, #000));
+  box-shadow: 0 3px 0 color-mix(in srgb, var(--accent) 50%, #000), 0 6px 12px rgba(0, 0, 0, 0.4), inset 0 0 0 2px rgba(255, 255, 255, 0.3);
+  transition: transform 0.25s var(--spring), box-shadow 0.25s; }
+.em-stop.past .em-dot { filter: saturate(0.75) brightness(0.92); }
+.em-stop.on .em-dot { transform: scale(1.28); box-shadow: 0 3px 0 color-mix(in srgb, var(--accent) 50%, #000), 0 0 0 4px rgba(255, 236, 205, 0.18), 0 0 22px color-mix(in srgb, var(--accent) 70%, transparent), inset 0 0 0 2px rgba(255, 255, 255, 0.35); }
+.em-stop:focus-visible .em-dot { outline: 3px solid var(--focus); outline-offset: 3px; }
+.em-ref { position: absolute; top: calc(100% + 0.3rem); white-space: nowrap; font-size: 0.66rem; font-weight: 600; letter-spacing: 0.02em; color: var(--ink-2); }
+.em-stop.on .em-ref { color: var(--gilt); top: calc(100% + 0.55rem); }
+/* the traveller: the same red ball as the logo, perched on the chosen stop */
+.em-ball { position: absolute; width: 1.15rem; height: 1.15rem; margin: -2.75rem 0 0 -0.575rem; border-radius: 50%; pointer-events: none; z-index: 3;
+  background: radial-gradient(circle at 34% 30%, #ffe3d2 0%, #ff8a5c 18%, #e3542a 46%, #b7310f 74%, #6e1904 100%);
+  box-shadow: inset -2px -3px 4px rgba(70, 8, 0, 0.5), 0 0 12px rgba(255, 104, 48, 0.5); transition: left 0s, top 0s; }
+.em-ball i { position: absolute; left: 22%; top: 14%; width: 32%; height: 22%; border-radius: 50%; background: rgba(255, 255, 255, 0.85); transform: rotate(-30deg); }
+.em-card { touch-action: pan-y; animation: em-in 0.38s var(--ease-out) both; }
+.em-card.from-right { --from: 36px; }
+.em-card.from-left { --from: -36px; }
+@keyframes em-in { from { opacity: 0; transform: translateX(var(--from)) rotate(calc(var(--from) / 36 * 1.2deg)); } }
+.em-head { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.25rem; }
+.em-step { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-3); }
+.em-doors { display: grid; gap: 0.45rem; margin-top: 0.75rem; padding-top: 0.7rem; border-top: 1.5px dashed color-mix(in srgb, var(--line) 80%, transparent); }
+.em-door { display: flex; align-items: center; gap: 0.55rem; font-size: 0.88rem; color: var(--ink-2); }
+.em-door b { color: var(--ink); }
+.em-door.out .icon { color: var(--brown); margin: 0 0.2rem; }
+.em-doors .tags { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+.em-doors .pill.soft { background: rgba(110, 67, 50, 0.1); color: var(--ink); box-shadow: none; }
+.em-nav { display: flex; align-items: center; gap: 0.7rem; }
+.em-nav .btn { min-height: 2.6rem; padding: 0.45rem 1.1rem; font-size: 0.92rem; }
+.em-pips { flex: 1; display: flex; justify-content: center; flex-wrap: wrap; gap: 0.3rem; }
+.em-pips i { width: 0.45rem; height: 0.45rem; border-radius: 50%; background: rgba(255, 236, 205, 0.22); transition: background 0.2s, transform 0.2s; }
+.em-pips i.on { background: var(--gilt); transform: scale(1.3); }
+[data-motion='reduced'] .em-stop, [data-motion='reduced'] .em-card { animation: none; }
+
+/* ---------------------------------------------------------------- coming home: the door opens */
+.homecoming { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; overflow: hidden; cursor: pointer; }
+.hm-dim { position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 38%, rgba(30, 14, 4, 0.35), rgba(12, 5, 1, 0.82) 70%); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); animation: hm-fade 0.45s ease-out both; }
+.hm-stage { position: relative; display: grid; justify-items: center; gap: 0; width: 100%; padding: 0 1.4rem; margin-top: -4vh; }
+.hm-door { --dw: min(46vw, 15rem); --dh: calc(var(--dw) * 1.42); position: relative; width: var(--dw); height: var(--dh); perspective: 900px; animation: hm-door-in 0.55s var(--spring) both; }
+/* the light behind the doors */
+.hm-light { position: absolute; inset: 0; overflow: hidden; border-radius: calc(var(--dw) / 2) calc(var(--dw) / 2) 6px 6px;
+  background: radial-gradient(ellipse at 50% 58%, #ffffff 0%, #fff6d6 28%, #ffe199 55%, #f2b64a 85%, #d48a1c 100%);
+  box-shadow: inset 0 0 30px rgba(255, 255, 255, 0.8); }
+.hm-mote { position: absolute; bottom: 8%; border-radius: 50%; background: #fff; box-shadow: 0 0 6px #fff; opacity: 0; animation: hm-mote linear infinite; }
+@keyframes hm-mote { 0% { transform: translateY(0); opacity: 0; } 20% { opacity: 0.9; } 100% { transform: translate(14px, calc(var(--dh) * -0.8)); opacity: 0; } }
+/* the two leaves of the door: planks, iron bands, a ring to pull */
+.hm-leaf { position: absolute; top: 0; bottom: 0; width: 50%; backface-visibility: visible; transform-style: preserve-3d;
+  background:
+    linear-gradient(180deg, transparent 17%, #2a1408 17%, #3a1d0c 19%, transparent 19%, transparent 76%, #2a1408 76%, #3a1d0c 78%, transparent 78%),
+    repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.28) 0 1.5px, transparent 1.5px calc(var(--dw) / 8)),
+    linear-gradient(90deg, #6a3b1e, #82502b 40%, #6f3f20 70%, #5a3118);
+  box-shadow: inset 0 0 18px rgba(0, 0, 0, 0.5); }
+.hm-leaf.left { left: 0; transform-origin: 0 50%; border-radius: calc(var(--dw) / 2) 0 0 6px / calc(var(--dw) / 2) 0 0 6px; animation: hm-open-left 1.25s cubic-bezier(0.55, 0.05, 0.25, 1) 0.6s both; }
+.hm-leaf.right { right: 0; transform-origin: 100% 50%; border-radius: 0 calc(var(--dw) / 2) 6px 0 / 0 calc(var(--dw) / 2) 6px 0; animation: hm-open-right 1.25s cubic-bezier(0.55, 0.05, 0.25, 1) 0.6s both; }
+.hm-leaf.left::after, .hm-leaf.right::after { content: ''; position: absolute; top: 0; bottom: 0; width: 2px; background: #fff3c8; box-shadow: 0 0 12px 3px rgba(255, 236, 170, 0.9); opacity: 0.9; animation: hm-crack 0.6s ease-in 0.1s both; }
+.hm-leaf.left::after { right: -1px; }
+.hm-leaf.right::after { left: -1px; }
+.hm-ring { position: absolute; top: 52%; width: calc(var(--dw) * 0.09); height: calc(var(--dw) * 0.09); border-radius: 50%; border: 2.5px solid #e3bc6c; box-shadow: 0 2px 2px rgba(0, 0, 0, 0.5); }
+.hm-leaf.left .hm-ring { right: 10%; }
+.hm-leaf.right .hm-ring { left: 10%; }
+/* the stone arch round the doorway */
+.hm-arch { position: absolute; inset: calc(var(--dw) * -0.07); border-radius: calc(var(--dw) * 0.57) calc(var(--dw) * 0.57) 8px 8px; pointer-events: none;
+  border: calc(var(--dw) * 0.07) solid #8a6a4a; border-bottom: 0;
+  box-shadow: inset 0 0 0 2px rgba(227, 188, 108, 0.7), 0 0 0 2px rgba(227, 188, 108, 0.5), 0 14px 30px rgba(0, 0, 0, 0.6);
+  background: none; }
+/* rays and glow bursting out of the doorway */
+.hm-glow { position: absolute; left: 50%; top: calc(min(46vw, 15rem) * 0.75); width: 140vmax; height: 140vmax; margin: -70vmax 0 0 -70vmax; border-radius: 50%; pointer-events: none;
+  background: radial-gradient(circle, rgba(255, 236, 170, 0.75), rgba(255, 200, 100, 0.25) 18%, rgba(255, 190, 90, 0) 42%); opacity: 0; transform: scale(0.3); animation: hm-burst 1.6s var(--ease-out) 0.85s forwards; }
+.hm-rays { position: absolute; left: 50%; top: calc(min(46vw, 15rem) * 0.75); width: 220vmax; height: 220vmax; margin: -110vmax 0 0 -110vmax; pointer-events: none;
+  opacity: 0; transform: scale(0.2); animation: hm-rays 1.4s var(--ease-out) 0.9s forwards; }
+.hm-rays::before { content: ''; position: absolute; inset: 0;
+  background: repeating-conic-gradient(from 0deg, rgba(255, 238, 180, 0.42) 0deg 5deg, transparent 5deg 15deg);
+  mask-image: radial-gradient(circle, #000 2%, transparent 36%); -webkit-mask-image: radial-gradient(circle, #000 2%, transparent 36%);
+  animation: spin 30s linear infinite; }
+.hm-spill { width: min(110vw, 34rem); height: 4.5rem; margin-top: -2px; pointer-events: none; clip-path: polygon(36% 0, 64% 0, 100% 100%, 0 100%);
+  background: linear-gradient(180deg, rgba(255, 238, 180, 0.75), rgba(255, 210, 120, 0.18) 60%, rgba(255, 210, 120, 0)); opacity: 0; animation: hm-fade 0.9s ease-out 1.05s forwards; }
+.hm-text { position: relative; display: grid; justify-items: center; text-align: center; margin-top: -1.6rem; }
+.hm-eyebrow { font-size: 0.74rem; font-weight: 600; letter-spacing: 0.34em; text-transform: uppercase; color: #f6dc9c; animation: hm-up 0.6s ease-out 1.2s both; }
+.hm-title { font-family: var(--font-display); font-weight: 600; font-size: clamp(2.9rem, 12vw, 4.8rem); line-height: 1; color: #fff8e8; margin-top: 0.2rem;
+  text-shadow: 0 0 24px rgba(255, 220, 140, 0.75), 0 3px 0 rgba(90, 50, 10, 0.6); animation: hm-up 0.7s var(--spring) 1.3s both; }
+.hm-title em { color: #ffd76e; font-style: italic; }
+.hm-manna { margin-top: 0.9rem; display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1.3rem; border-radius: 999px; color: #ffe7a3; font-size: 2rem; font-weight: 700;
+  background: linear-gradient(180deg, rgba(58, 30, 12, 0.92), rgba(36, 18, 6, 0.92)); box-shadow: inset 0 0 0 1px rgba(227, 188, 108, 0.5), 0 10px 24px rgba(0, 0, 0, 0.45); animation: hm-up 0.6s var(--spring) 1.45s both; }
+.hm-manna small { font-size: 0.85rem; font-weight: 600; letter-spacing: 0.08em; color: #f3d38a; }
+.hm-sub { margin-top: 0.6rem; font-family: var(--font-display); font-style: italic; font-size: 1.2rem; color: #fbe6b8; animation: hm-up 0.6s ease-out 2s both; }
+.hm-badge { margin-top: 0.55rem; display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.38rem 0.9rem; border-radius: 999px; background: #fffaf0; color: #5a3608; font-size: 0.88rem; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35); animation: stamp 0.6s var(--spring) 2.4s both; }
+/* at the end the light fills the room and carries into the finale */
+.hm-flood { position: absolute; left: 50%; top: 38%; width: 30vmax; height: 30vmax; margin: -15vmax 0 0 -15vmax; border-radius: 50%; pointer-events: none; opacity: 0;
+  background: radial-gradient(circle, #fffdf4 0%, #fff3cf 45%, rgba(255, 228, 160, 0.9) 70%, rgba(255, 220, 150, 0) 100%); }
+.homecoming.leaving .hm-flood { animation: hm-flood 0.55s ease-in forwards; }
+.light-veil { position: fixed; inset: 0; z-index: 80; pointer-events: none; background: radial-gradient(circle at 50% 38%, #fffdf4, #fff0c4 60%, #ffe2a0); animation: veil-out 0.9s ease-out forwards; }
+@keyframes veil-out { from { opacity: 1; } to { opacity: 0; } }
+@keyframes hm-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes hm-door-in { from { opacity: 0; transform: translateY(18px) scale(0.92); } }
+@keyframes hm-crack { from { opacity: 0; } to { opacity: 0.9; } }
+@keyframes hm-open-left { from { transform: rotateY(0deg); } to { transform: rotateY(-108deg); } }
+@keyframes hm-open-right { from { transform: rotateY(0deg); } to { transform: rotateY(108deg); } }
+@keyframes hm-burst { to { opacity: 1; transform: scale(1); } }
+@keyframes hm-rays { to { opacity: 1; transform: scale(1); } }
+@keyframes hm-up { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+@keyframes hm-flood { to { opacity: 1; transform: scale(9); } }
+[data-motion='reduced'] .hm-leaf { animation-duration: 0.01ms !important; animation-delay: 0s !important; }
+[data-motion='reduced'] .hm-rays, [data-motion='reduced'] .hm-mote { display: none; }
+
+/* ---------------------------------------------------------------- the Journal ribbon */
+.bm-btn { all: unset; box-sizing: border-box; cursor: pointer; flex: none; display: inline-flex; align-items: center; justify-content: center; gap: 0.3rem; min-width: 2.2rem; height: 2.2rem; padding: 0 0.35rem; border-radius: 999px; color: var(--ink-3); -webkit-tap-highlight-color: transparent; transition: color 0.2s, background 0.2s, transform 0.12s; }
+.bm-btn:hover { background: rgba(255, 236, 205, 0.08); color: var(--ink-2); }
+.bm-btn.on-paper:hover { background: rgba(110, 67, 50, 0.08); }
+.bm-btn:active { transform: scale(0.88); }
+.bm-btn.on { color: #c0392b; }
+.bm-btn.on .icon path { fill: currentColor; }
+.bm-btn.on-paper.on { color: #b3271c; }
+.bm-btn span { font-size: 0.78rem; font-weight: 600; }
+.bm-btn:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.bm-pop { animation: bm-pop 0.5s var(--spring); }
+@keyframes bm-pop { 0% { transform: translateY(-10px) scale(0.6); } 55% { transform: translateY(2px) scale(1.2, 0.85); } 100% { transform: none; } }
+.running-head .bm-btn { margin: -0.4rem -0.4rem 0 0; }
+.home-page-title .bm-btn { margin-left: auto; min-width: 1.9rem; height: 1.9rem; }
+.em-head .bm-btn { margin: -0.4rem -0.5rem -0.4rem 0; }
+.em-head .pill { margin-left: auto; }
+
+/* ---------------------------------------------------------------- the Journal screen */
+.jr-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.6rem; }
+.jr-stats .stat { cursor: default; }
+.jr-tabs { display: flex; width: 100%; }
+.jr-tabs button { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem; padding: 0.5rem 0.6rem; font-size: 0.85rem; letter-spacing: 0.02em; }
+.jr-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.8rem; }
+.jr-card { position: relative; border-radius: 1.3rem; padding: 0.85rem 1rem 0.9rem; animation: hm-up 0.45s var(--ease-out) both; animation-delay: calc(var(--i, 0) * 50ms); }
+.jr-head { display: flex; align-items: center; gap: 0.5rem; }
+.jr-ref { font-family: var(--font-display); font-weight: 600; font-size: 1.3rem; color: var(--brown); line-height: 1.1; }
+.jr-meta { flex: 1; min-width: 0; font-size: 0.7rem; color: var(--ink-3); letter-spacing: 0.04em; }
+.jr-head .bm-btn { margin: -0.3rem -0.5rem -0.3rem auto; }
+.jr-text { font-family: var(--font-scripture); font-size: 1.14rem; line-height: 1.42; margin-top: 0.35rem; color: var(--ink); text-wrap: pretty; }
+.jr-note { display: block; width: 100%; margin-top: 0.7rem; padding: 0.6rem 0.75rem; border-radius: 0.9rem; border: 1.5px dashed #d2b488; background: rgba(255, 252, 244, 0.7); color: #33211a; font-family: var(--font-display); font-style: italic; font-size: 1.08rem; line-height: 1.35; resize: vertical; outline: none; }
+.jr-note:focus { border-style: solid; border-color: #b98a5e; background: #fffdf7; }
+.jr-note::placeholder { color: #a08a74; }
+.jr-saved { display: block; height: 1rem; margin-top: 0.25rem; font-size: 0.72rem; color: #7a5a20; text-align: right; transition: opacity 0.3s; }
+.jr-saved.idle { opacity: 0; height: 0; margin: 0; }
+.jr-rank { display: grid; place-items: center; flex: none; min-width: 2rem; height: 2rem; padding: 0 0.3rem; border-radius: 999px; font-size: 0.78rem; font-weight: 700; color: #5b4234; background: rgba(110, 67, 50, 0.12); }
+.jr-rank.r1 { color: #3a2408; background: radial-gradient(circle at 35% 30%, #fff3c0, #e2ad2e 60%, #8f6106); }
+.jr-rank.r2 { color: #333; background: radial-gradient(circle at 35% 30%, #ffffff, #c9c9c9 60%, #7d7d7d); }
+.jr-rank.r3 { color: #3a1c06; background: radial-gradient(circle at 35% 30%, #ffd9b8, #c07a43 60%, #6b3a16); }
+.jr-chips { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.6rem; }
+.jr-chip { padding: 0.18rem 0.6rem; border-radius: 999px; font-size: 0.74rem; color: #5b4234; background: rgba(110, 67, 50, 0.1); }
+.jr-chip b { color: #33211a; }
+.jr-chip.gold { color: #6a4508; background: rgba(212, 154, 18, 0.18); box-shadow: inset 0 0 0 1px rgba(212, 154, 18, 0.4); }
+.jr-empty { display: flex; gap: 0.9rem; align-items: center; color: var(--ink-2); }
+.jr-empty .icon { color: var(--gilt); flex: none; }
+[data-motion='reduced'] .jr-card { animation: none; }

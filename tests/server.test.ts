@@ -276,7 +276,7 @@ describe('streaks and the rest day (rule 13.7)', () => {
   });
 
   it('missing the rest day keeps the streak alive', () => {
-    const p = { id: 'x', created_at: 0, name: null, pass_hash: null, scribe: 0, rest_day: 0, wording: 'kjv' as const, treasure: 0, streak: 5, best_streak: 5, last_win: '2026-11-21', guide_done: 0 };
+    const p = { id: 'x', created_at: 0, name: null, pass_hash: null, scribe: 0, rest_day: 0, wording: 'kjv' as const, treasure: 0, streak: 5, best_streak: 5, last_win: '2026-11-21', guide_done: 0, plus: 0, practice_used: 0 };
     expect(game.streakOn(p, '2026-11-22')).toBe(5); // Sunday itself
     expect(game.streakOn(p, '2026-11-23')).toBe(5); // Monday: Sunday was the rest day
     expect(game.streakOn(p, '2026-11-24')).toBe(0);

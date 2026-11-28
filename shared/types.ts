@@ -375,3 +375,45 @@ export interface StandingsView {
   /** When this was worked out (server time), for the live board. */
   at: number;
 }
+
+/** A verse the player kept in their Journal, with their own note. */
+export interface Bookmark {
+  verse: number;
+  ref: string;
+  text: string;
+  wording: Wording;
+  note: string;
+  savedAt: number;
+  /** How many times the player has hopped to it. */
+  uses: number;
+}
+
+/** One of the player's go-to verses: the ones they hop to most. */
+export interface TopVerse {
+  verse: number;
+  ref: string;
+  text: string;
+  wording: Wording;
+  count: number;
+  /** Its place among the player's own verses (ties share a place). */
+  rank: number;
+  /** Its place among every player's most-used verses. */
+  everyoneRank: number | null;
+  lastUsed: number;
+  saved: boolean;
+}
+
+export interface JournalView {
+  bookmarks: Bookmark[];
+  top: TopVerse[];
+  totals: { hops: number; verses: number; saved: number };
+}
+
+/** For the Desk: the verses players hop to most. */
+export interface MostUsedVerse {
+  verse: number;
+  ref: string;
+  text: string;
+  count: number;
+  players: number;
+}

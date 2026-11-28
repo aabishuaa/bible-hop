@@ -22,6 +22,7 @@ import { drafts, isReducedMotion, usePrefs } from '../../prefs.ts';
 import { navigate } from '../../router.ts';
 import { FLIP_FEEL, TIER_HINT, rgb, TIER_COLOR } from '../../theme.ts';
 import { PaperCanvas, press, useDocumentTitle } from '../../ui/base.tsx';
+import { BookmarkButton } from '../../ui/Bookmark.tsx';
 import { Icon, TierBadge } from '../../ui/icons.tsx';
 import { ConcordanceModal, ConfirmModal, GraceModal, LookBackModal, ReportModal, StatusModal } from './modals.tsx';
 import { CanonBar, Chain, HomeWords, Hud, VerseWords, homeReadiness, useIsWide, useKeyboardInset } from './parts.tsx';
@@ -444,6 +445,7 @@ export function JourneyScreen({ initial, clockSkew, coach, onFinale, onExit }: J
             <div className="page-scroll">
               <div className="home-page-title" data-snap>
                 <Icon name="home" size="1rem" strokeWidth={2.4} /> Home verse <span style={{ color: 'var(--ink-2)', letterSpacing: '0.06em', textTransform: 'none', fontSize: '0.84rem' }}>{j.home.ref}</span>
+                <BookmarkButton verse={j.home.id} refLabel={j.home.ref} source="page" className="on-paper" size="1rem" />
               </div>
               <p className="home-verse" data-snap>
                 <HomeWords home={j.home} wording={shownWording} match={door?.key ?? null} />
@@ -476,6 +478,7 @@ export function JourneyScreen({ initial, clockSkew, coach, onFinale, onExit }: J
                 {j.current.ref}
               </div>
               <div className="rule" />
+              <BookmarkButton verse={j.current.id} refLabel={j.current.ref} source="page" className="on-paper" />
             </div>
             <p className={`verse ${verseClass} ink-in`} data-snap key={`${j.current.id}-${shownWording}`} aria-label={`${j.current.ref}. Tap a word to choose it as your door.`}>
               <span className="num" aria-hidden="true">{j.current.verse}</span>

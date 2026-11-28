@@ -44,6 +44,11 @@ export function registerDesk(app: FastifyInstance, game: Game): Desk {
     admin(req);
     return desk.today();
   });
+  app.get('/api/desk/verses/top', async (req) => {
+    admin(req);
+    const range = (req.query as Query).range;
+    return { range: range === 'day' || range === 'all' ? range : 'week', verses: desk.mostUsed(range === 'day' || range === 'all' ? range : 'week') };
+  });
   app.get('/api/desk/calendar', async (req) => {
     admin(req);
     const q = req.query as Query;

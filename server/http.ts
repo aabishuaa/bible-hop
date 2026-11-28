@@ -128,6 +128,18 @@ export function buildApp(game: Game, opts: AppOptions = {}): FastifyInstance {
     return { ok: true };
   });
 
+  // the Journal: kept verses with notes, and the verses a player hops to most
+  app.get('/api/journal', async (req, reply) => {
+    const p = player(req, reply);
+    return game.journal.view(p.id, p.wording);
+  });
+  app.get('/api/bookmarks', async (req, reply) => ({ verses: game.journal.saved(player(req, reply).id) }));
+  app.put('/api/bookmarks', async (req, reply) => game.journal.save(player(req, reply).id, (req.body ?? {}) as Body));
+  app.delete('/api/bookmarks/:verse', async (req, reply) => {
+    game.journal.remove(player(req, reply).id, (req.params as { verse: string }).verse);
+    return { ok: true };
+  });
+
   app.post('/api/track', async (req, reply) => {
     const p = player(req, reply);
     const type = ((req.body ?? {}) as Body).type;

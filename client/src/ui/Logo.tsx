@@ -3,7 +3,7 @@
 // bounces across the tops of the letters (each one dips as it lands) and hops home again; while it
 // is away a faint ring keeps the O. Tapping the logo sends it off at once. The small version's
 // ball hops in place when the player hops.
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { haptics } from '../fx/haptics.ts';
 import { sound } from '../fx/sound.ts';
 import { isReducedMotion } from '../prefs.ts';
@@ -92,10 +92,59 @@ function tour(wrap: HTMLElement, stops: number[], loud: boolean): Promise<void> 
   return anim.finished.then(() => wrap.classList.remove('touring')).catch(() => wrap.classList.remove('touring'));
 }
 
+type Dot = { x: number; y: number; r: number; o: number };
+
+/** The dotted path of the ball's last hop: from above the G, over the space beside "Bible", down
+ *  into the O. Measured from the letters, so it fits whatever size the wordmark is set at. */
+function trailDots(btn: HTMLElement, hop: HTMLElement): Dot[] {
+  const letters = [...hop.querySelectorAll<HTMLElement>('.lh')];
+  const ball = hop.querySelector<HTMLElement>('.lo .ball-body');
+  const bible = btn.querySelector<HTMLElement>('.logo-bible');
+  if (!ball || !bible || letters.length < 7) return [];
+  const box = btn.getBoundingClientRect();
+  const fs = parseFloat(getComputedStyle(hop).fontSize);
+  const rel = (r: DOMRect) => ({ l: r.left - box.left, t: r.top - box.top, r: r.right - box.left, b: r.bottom - box.top, w: r.width, h: r.height });
+  const g = rel(letters[6].getBoundingClientRect());
+  const o = rel(ball.getBoundingClientRect());
+  const bi = rel(bible.getBoundingClientRect());
+  const baseline = rel(letters[1].getBoundingClientRect()).b;
+  const capTop = baseline - fs * 0.69;
+  const cx = o.l + o.w / 2, cy = o.t + o.h / 2, rad = o.w / 2;
+  const S = { x: g.l + g.w * 0.45, y: capTop - fs * 0.1 };
+  const ang = (-52 * Math.PI) / 180;
+  const E = { x: cx + Math.cos(ang) * rad * 1.45, y: cy + Math.sin(ang) * rad * 1.45 };
+  const peak = bi.t + bi.h * 0.42;
+  const yc = (8 * peak - S.y - E.y) / 6;
+  const C1 = { x: S.x - (S.x - E.x) * 0.12, y: yc };
+  const C2 = { x: E.x + (S.x - E.x) * 0.3, y: yc };
+  const at = (t: number) => {
+    const u = 1 - t;
+    return { x: u * u * u * S.x + 3 * u * u * t * C1.x + 3 * u * t * t * C2.x + t * t * t * E.x, y: u * u * u * S.y + 3 * u * u * t * C1.y + 3 * u * t * t * C2.y + t * t * t * E.y };
+  };
+  // walk the curve in small steps and drop a dot every `gap` pixels
+  const gap = fs * 0.17;
+  const dots: Dot[] = [];
+  let prev = at(0), run = gap;
+  const pad = fs * 0.06;
+  for (let i = 1; i <= 400; i++) {
+    const t = i / 400, p = at(t);
+    run += Math.hypot(p.x - prev.x, p.y - prev.y);
+    prev = p;
+    if (run < gap) continue;
+    run = 0;
+    const inBible = p.x > bi.l - pad && p.x < bi.r + pad && p.y > bi.t + bi.h * 0.18 - pad && p.y < bi.b - bi.h * 0.12 + pad;
+    if (inBible) continue;
+    dots.push({ x: p.x, y: p.y, r: fs * (0.026 + 0.03 * t), o: 0.3 + 0.62 * t });
+  }
+  return dots;
+}
+
 export function Logo({ size = 'hero', hopKey, tagline }: { size?: 'hero' | 'mini'; hopKey?: number; tagline?: string }) {
   const [wave, setWave] = useState(() => (isReducedMotion() ? 0 : 1));
   const [hop, setHop] = useState(0);
+  const [dots, setDots] = useState<Dot[]>([]);
   const hopRef = useRef<HTMLSpanElement>(null);
+  const btnRef = useRef<HTMLButtonElement>(null);
   const busy = useRef(false);
   const route = useRef(0);
 
@@ -118,6 +167,22 @@ export function Logo({ size = 'hero', hopKey, tagline }: { size?: 'hero' | 'mini
     return () => window.clearTimeout(timer);
   }, [size, go]);
 
+  // the hop trail beside "Bible", re-measured whenever the wordmark changes size
+  useLayoutEffect(() => {
+    if (size !== 'hero') return;
+    const btn = btnRef.current;
+    if (!btn) return;
+    const measure = () => {
+      const h = hopRef.current;
+      if (h && !h.classList.contains('touring')) setDots(trailDots(btn, h));
+    };
+    measure();
+    void document.fonts?.ready.then(measure);
+    const ro = new ResizeObserver(measure);
+    ro.observe(btn);
+    return () => ro.disconnect();
+  }, [size]);
+
   useEffect(() => {
     if (hopKey === undefined || hopKey === 0 || isReducedMotion()) return;
     setHop((h) => h + 1);
@@ -136,6 +201,7 @@ export function Logo({ size = 'hero', hopKey, tagline }: { size?: 'hero' | 'mini
   }
   return (
     <button
+      ref={btnRef}
       type="button"
       className="logo hero"
       aria-label={label}
@@ -147,6 +213,11 @@ export function Logo({ size = 'hero', hopKey, tagline }: { size?: 'hero' | 'mini
         } else void go(true);
       }}
     >
+      {dots.length > 0 && (
+        <svg className="hop-trail" aria-hidden="true">
+          {dots.map((d, i) => <circle key={i} cx={d.x.toFixed(1)} cy={d.y.toFixed(1)} r={d.r.toFixed(2)} style={{ opacity: d.o, animationDelay: `${700 + i * 45}ms` }} />)}
+        </svg>
+      )}
       <span className="logo-bible">Bible</span>
       <span ref={hopRef} className={`logo-hop ${wave ? 'wave' : ''}`} key={wave} aria-hidden="true">
         {LETTERS.map((l, i) => (i === 1

@@ -29,6 +29,7 @@ import { Recognizer } from '../recognize/recognizer.ts';
 import type { AiBackend, AiSettings } from './ai.ts';
 import { AiService, DEFAULT_AI } from './ai.ts';
 import { FIRST_FOURTEEN, GUIDES, MORE_VERSES, shuffled } from './seed.ts';
+import { Journal, backfillUses, syncUses } from './journal.ts';
 
 export interface PlayerRow {
   id: string;
@@ -43,6 +44,10 @@ export interface PlayerRow {
   best_streak: number;
   last_win: string | null;
   guide_done: number;
+  /** Bible Hopping Plus: Infinity mode and the like. Granted at the Desk for now. */
+  plus: number;
+  /** Sunday School journeys started, for the free allowance. */
+  practice_used: number;
 }
 
 interface JourneyRow {
@@ -85,15 +90,8 @@ export function guestName(id: string): string {
   return `${GUEST_WORDS[h[0] % GUEST_WORDS.length]} ${GUEST_NOUNS[h[1] % GUEST_NOUNS.length]} ${10 + (h[2] % 90)}`;
 }
 
-export class GameError extends Error {
-  constructor(
-    readonly code: string,
-    message: string,
-    readonly status = 400,
-  ) {
-    super(message);
-  }
-}
+export { GameError } from './errors.ts';
+import { GameError } from './errors.ts';
 
 export interface GameOptions {
   db: Db;
@@ -126,6 +124,7 @@ export class Game {
   readonly bible: Bible;
   readonly refs: RefParser;
   readonly ai: AiService;
+  readonly journal: Journal;
   private readonly lexicons = new Map<string, { lexicon: Lexicon; recognizer: Recognizer }>();
   private readonly worlds = new Map<string, World>();
   private readonly locks = new Map<string, Promise<unknown>>();
@@ -138,6 +137,7 @@ export class Game {
     this.refs = new RefParser(this.bible);
     this.rateLimit = opts.rateLimit ?? true;
     this.ai = new AiService(this.db, opts.aiBackend ?? null, () => this.aiSettings);
+    this.journal = new Journal(this.db, this.bible, () => this.now());
     this.firstStart(opts.launchDate);
   }
 
@@ -175,6 +175,7 @@ export class Game {
     }
     this.ensureCalendar(at);
     this.refreshAliases();
+    backfillUses(this.db);
   }
 
   // -------------------------------------------------------------------------------------------
@@ -426,6 +427,7 @@ export class Game {
       j.id, j.playerId, j.date, j.kind, j.status, j.loss ?? null, j.mode, j.scribe ? 1 : 0, j.home, j.manna, j.path.length, j.totalStrikes, first, last?.family ?? null, homeCount,
       j.version, j.createdAt, j.finishedAt ?? null, j.deadline, JSON.stringify(j),
     );
+    syncUses(this.db, j);
   }
 
   dailyJourney(playerId: string, date: string): Journey | undefined {
@@ -1034,6 +1036,10 @@ export class Game {
         this.db.run('UPDATE OR IGNORE achievements SET player_id = ? WHERE player_id = ?', account.id, guest.id);
         this.db.run('DELETE FROM achievements WHERE player_id = ?', guest.id);
         this.db.run('UPDATE badge_awards SET player_id = ? WHERE player_id = ?', account.id, guest.id);
+        this.journal.merge(guest.id, account.id);
+        this.db.run('UPDATE OR IGNORE minigame_plays SET player_id = ? WHERE player_id = ?', account.id, guest.id);
+        this.db.run('DELETE FROM minigame_plays WHERE player_id = ?', guest.id);
+        this.db.run('UPDATE players SET practice_used = MAX(practice_used, ?), plus = MAX(plus, ?) WHERE id = ?', guest.practice_used ?? 0, guest.plus ?? 0, account.id);
         this.db.run('DELETE FROM sessions WHERE player_id = ?', guest.id);
         this.db.run('DELETE FROM players WHERE id = ?', guest.id);
       });
@@ -1046,7 +1052,7 @@ export class Game {
   /** Rule 19.11: honor deletion requests. Removes the player and everything typed by them. */
   deletePlayer(playerId: string): void {
     this.db.tx(() => {
-      for (const table of ['journeys', 'sessions', 'achievements', 'badge_awards', 'notes', 'disputes']) this.db.run(`DELETE FROM ${table} WHERE player_id = ?`, playerId);
+      for (const table of ['journeys', 'sessions', 'achievements', 'badge_awards', 'notes', 'disputes', 'bookmarks', 'verse_uses', 'minigame_plays']) this.db.run(`DELETE FROM ${table} WHERE player_id = ?`, playerId);
       this.db.run('UPDATE ai_calls SET player_id = NULL, typed = NULL WHERE player_id = ?', playerId);
       this.db.run('UPDATE events SET player_id = NULL WHERE player_id = ?', playerId);
       this.db.run('DELETE FROM players WHERE id = ?', playerId);

@@ -103,10 +103,10 @@ export function TodayScreen({ today, clockSkew }: { today: TodayView; clockSkew:
     : 'A new verse is waiting for you';
   const dayLeft = Math.max(0, Math.min(1, left / 86_400_000));
   const dock: { icon: string; label: string; sub: string; tone: string; go: () => void; show: boolean }[] = [
+    { icon: 'ribbon', label: 'Journal', sub: 'Your kept verses and go-to verses', tone: 'crimson', go: () => navigate('/journal'), show: true },
     { icon: 'trophy', label: 'Standings', sub: 'The live board', tone: 'gold', go: () => navigate(`/standings/${today.date}`), show: true },
-    { icon: 'medal', label: 'Badges', sub: 'Your medals', tone: 'crimson', go: () => navigate('/achievements'), show: today.features.achievements },
+    { icon: 'medal', label: 'Badges', sub: 'Your medals', tone: 'loaf', go: () => navigate('/achievements'), show: today.features.achievements },
     { icon: 'lens', label: 'Practice', sub: 'Sunday School: practise on any verse', tone: 'fish', go: () => navigate('/practice'), show: today.features.sundaySchool },
-    { icon: 'book', label: 'Rules', sub: 'How to play', tone: 'loaf', go: () => navigate('/how'), show: true },
     { icon: 'sparkle', label: 'Revelation', sub: "Yesterday\u2019s results", tone: 'pearl', go: () => navigate(`/revelation/${today.yesterday?.date ?? today.date}`), show: today.features.revelation && today.puzzleNo > 1 },
   ];
   const openYesterday = () => {
@@ -122,7 +122,8 @@ export function TodayScreen({ today, clockSkew }: { today: TodayView; clockSkew:
         <header className="home2-top">
           <span className="home2-mark" aria-hidden="true"><Ornament size={30} /></span>
           <nav className="home2-nav" aria-label="Menu">
-            <button className="glass-icon" onClick={() => { press(); navigate('/history'); }} aria-label="History"><Icon name="ribbon" size="1.25rem" /></button>
+            <button className="glass-icon" onClick={() => { press(); navigate('/history'); }} aria-label="History: your past days"><Icon name="clock" size="1.25rem" /></button>
+            <button className="glass-icon" onClick={() => { press(); navigate('/how'); }} aria-label="How to play"><Icon name="book" size="1.25rem" /></button>
             <button className="glass-icon" onClick={() => { press(); navigate('/settings'); }} aria-label="Settings"><Icon name="ornament" size="1.35rem" /></button>
           </nav>
         </header>
