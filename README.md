@@ -121,11 +121,13 @@ The full rules are in the game under *How to play*.
 
 - **Journal**: tap the ribbon beside any verse to keep it, with a note of your own. The Journal also
   ranks your go-to verses (the ones you hop to most) and shows where each stands among all players.
-- **Daily games**: five small games, one timed round of each a day, the same for everyone.
-  *Book It* (which book is this verse from?), *Who Art Thou?* (name the Bible character from five
-  clues), *Bible or Babble* (is that saying really in the Bible?), *Fix Your Eyes* (keep your eyes on
-  Jesus to walk on the water) and *Loaves and Fishes* (feed the five thousand, then gather the twelve
-  baskets). The server keeps every clock, so a timed answer cannot arrive late.
+- **Daily games**: three quick games, one timed round of each a day, the same for everyone.
+  *Book It* (which book is this verse from? every miss sweeps away the wrong side of the shelf),
+  *Who Art Thou?* (name the Bible character from five clues, the prize dropping a step with each
+  clue) and *Bible or Babble* (swipe each saying to Bible or Babble; right answers in a row build a
+  run). Each round ends with your record, how everyone did today and a card to share. The server
+  keeps every clock, so a timed answer cannot arrive late. *Fix Your Eyes* and *Loaves and Fishes*
+  are resting: out of the lineup, but still playable at `/games/fixyoureyes` and `/games/loaves`.
 - **Sunday School** gives 10 practice journeys free. *Bible Hopping Plus* (Infinity mode) has no
   limit; until payments exist, a Head Scribe can give Plus to testers from the player's page at the
   Desk. The number of free journeys is a rule the Desk can change.
@@ -149,7 +151,7 @@ most, today, this week or ever.
 | The game you see | `client/src/` | React, with the page turn drawn in WebGL (`client/src/fx/flip.ts`), sound made in the browser (`fx/sound.ts`) and haptics (`fx/haptics.ts`). |
 | Challenges | `server/game/challenges.ts` | Drawn from the date and the verse, so everyone meets the same one. |
 | The Journal | `server/app/journal.ts`, `client/src/screens/JournalScreen.tsx` | Kept verses, notes, verse counts. |
-| The daily games | `server/minigames/`, `client/src/minigames/` | Content, timing and scoring on the server; the two action games are drawn on canvas. |
+| The daily games | `server/minigames/`, `client/src/minigames/` | Content, timing, scoring and today's spread of results on the server; `lineup()` in `shared/minigames.ts` says which games are in the day's set. |
 | Tests | `tests/` | The directive's 25 acceptance tests, the API, the clock, the Desk, challenges, the Journal and the games (their content is checked against the Bible text). |
 
 The only emoji in the whole game are on the share card, where the directive requires them so the card

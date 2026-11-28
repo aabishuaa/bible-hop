@@ -2,6 +2,9 @@
 
 export type GameId = 'bookit' | 'whoartthou' | 'babble' | 'fixyoureyes' | 'loaves';
 
+/** The games in the daily lineup, in order. */
+export const lineup = (): GameInfo[] => GAMES.filter((g) => !g.retired);
+
 export interface GameInfo {
   id: GameId;
   name: string;
@@ -11,6 +14,8 @@ export interface GameInfo {
   timing: string;
   how: string[];
   cite?: string;
+  /** Resting: still playable by its address, but left out of the daily lineup. */
+  retired?: boolean;
 }
 
 export const GAMES: GameInfo[] = [
@@ -56,6 +61,7 @@ export const GAMES: GameInfo[] = [
   },
   {
     id: 'fixyoureyes',
+    retired: true,
     name: 'Fix Your Eyes',
     tagline: 'Walk on the water to Jesus',
     icon: 'dove',
@@ -70,6 +76,7 @@ export const GAMES: GameInfo[] = [
   },
   {
     id: 'loaves',
+    retired: true,
     name: 'Loaves and Fishes',
     tagline: 'Feed the five thousand',
     icon: 'loaf',
@@ -126,6 +133,10 @@ export interface GameResult {
   /** A verse worth keeping in the Journal, when the round showed one. */
   verse?: VerseRefView;
   streak: number;
+  /** The player's record in this game. */
+  stats: { played: number; won: number; streak: number; best: number };
+  /** How today's players did, bucket by bucket (guesses, clues or sayings right); `mine` is the player's. */
+  distribution: { label: string; count: number; mine: boolean }[];
 }
 
 // --------------------------------------------------------------------------------------- Book It

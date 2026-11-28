@@ -357,8 +357,44 @@ class SoundEngine {
     this.tone({ at: 0.3, freq: 170, to: 80, dur: 0.14, gain: 0.18 });
   }
 
-  /** Home again. */
   // ---------------------------------------------------------------------- the mini games
+
+  /** A run of right answers: each one a step higher. */
+  combo(n: number, at = 0): void {
+    const scale = [N.E5, N.Fs5, N.Gs5, N.A5, N.B5, 1108.73, N.E6, 1479.98];
+    const f = scale[Math.min(scale.length - 1, Math.max(0, n - 1))];
+    this.pluck(f, at, 0.14);
+    this.bell(f * 2, at + 0.06, 0.05, 0.6);
+    if (n >= 3) this.noise({ at: at + 0.05, dur: 0.3, gain: 0.03, type: 'highpass', freq: 7000, wet: 0.5 });
+  }
+
+  /** The last seconds: a heartbeat. */
+  heartbeat(): void {
+    this.tone({ freq: 70, to: 48, dur: 0.12, gain: 0.22, lowpass: 300 });
+    this.tone({ at: 0.16, freq: 64, to: 44, dur: 0.14, gain: 0.16, lowpass: 280 });
+  }
+
+  /** A tile tapped: a little wooden knock. */
+  tile(): void {
+    this.noise({ dur: 0.025, gain: 0.06, freq: 1800, q: 4 });
+    this.tone({ freq: 620, to: 480, dur: 0.05, gain: 0.05, type: 'triangle' });
+  }
+
+  /** A card swept off the table. */
+  whoosh(dir = 1): void {
+    this.noise({ dur: 0.22, gain: 0.06, type: 'bandpass', freq: 600, to: 2600, q: 0.7, pan: dir * 0.6 });
+  }
+
+  /** A stamp coming down on paper. */
+  stamp(at = 0): void {
+    this.tone({ at, freq: 120, to: 60, dur: 0.12, gain: 0.25, lowpass: 500 });
+    this.noise({ at, dur: 0.06, gain: 0.1, type: 'lowpass', freq: 1200 });
+  }
+
+  /** A number counting up. */
+  count(): void {
+    this.tone({ freq: 1800, dur: 0.015, gain: 0.02 });
+  }
 
   /** The clock: a soft tick, sharper in the last seconds. */
   tick(urgent = false): void {
@@ -451,6 +487,7 @@ class SoundEngine {
     this.tone({ at, freq: N.D4, dur: 1.4, gain: 0.05, attack: 0.6, wet: 0.6, type: 'triangle' });
   }
 
+  /** Home again. */
   home(at = 0): void {
     [N.D3, N.A3, N.D4, N.Fs4, N.A4].forEach((f) => this.tone({ at, freq: f, dur: 2.4, gain: 0.07, attack: 0.35, wet: 0.7, type: 'triangle', lowpass: 2600 }));
     [N.D5, N.Fs5, N.A5, N.D6, N.Fs6, N.A6].forEach((f, i) => this.bell(f, at + 0.25 + i * 0.12, 0.1, 1.9, (i - 2.5) * 0.2));

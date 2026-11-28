@@ -170,7 +170,7 @@ function Finale({ f }: { f: FinaleView }) {
           <TripMap f={f} books={books.length ? books : today?.books ?? []} />
           <h2 className="display">The Emmaus <em>Road</em></h2>
           <p className="small muted">Walk back along your road: tap a stop, or step through with the arrows. The word you came in by is highlighted; the word you left by is underlined.</p>
-          <EmmausRoad f={f} books={books.length ? books : today?.books ?? []} />
+          <EmmausRoad f={f} />
           <h2 className="display">The Book of <em>Numbers</em></h2>
           <Numbers f={f} />
         </>
@@ -223,7 +223,6 @@ export function TripMap({ f, books, route }: { f?: FinaleView; books: BookSpan[]
   const wrap = useRef<HTMLDivElement>(null);
   const ball = useRef<SVGGElement>(null);
   const shadow = useRef<SVGEllipseElement>(null);
-  const label = useRef<SVGTextElement>(null);
   const arcs = useRef<(SVGPathElement | null)[]>([]);
   const run = useRef(0);
   const hops = useMemo<MapHop[]>(() => {
@@ -257,13 +256,6 @@ export function TripMap({ f, books, route }: { f?: FinaleView; books: BookSpan[]
     shadow.current?.setAttribute('rx', (R * (1 - Math.min(0.6, h / 260))).toFixed(1));
     shadow.current?.setAttribute('opacity', (0.45 * (1 - Math.min(0.8, h / 200))).toFixed(2));
   };
-  const showLabel = (px: number, text: string) => {
-    const el = label.current;
-    if (!el) return;
-    el.textContent = text;
-    el.setAttribute('x', Math.min(W - 70, Math.max(70, px)).toFixed(1));
-    el.animate([{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }], { duration: 260, fill: 'forwards' });
-  };
   const drawAll = (shown: boolean) => arcs.current.forEach((p) => {
     if (!p) return;
     const L = p.getTotalLength();
@@ -284,7 +276,6 @@ export function TripMap({ f, books, route }: { f?: FinaleView; books: BookSpan[]
     setSel(null);
     drawAll(false);
     placeBall(x(hops[0].from), ground);
-    if (label.current) label.current.style.opacity = '0';
     await wait(300);
     for (let i = 0; i < hops.length; i++) {
       if (!alive()) return;
@@ -307,7 +298,6 @@ export function TripMap({ f, books, route }: { f?: FinaleView; books: BookSpan[]
       path.style.strokeDashoffset = '0';
       sound.land(h.home ? 'home' : h.tier);
       haptics.play(h.home ? [14, 40, 20] : 10);
-      showLabel(g.b, h.toRef);
       // land, then two little skips
       if (!(await tween(90, alive, (t) => placeBall(g.b, ground, 1 + 0.24 * Math.sin(Math.PI * t), 1 - 0.26 * Math.sin(Math.PI * t))))) return;
       for (const [hgt, d] of [[16, 210], [6, 150]] as const) {
@@ -355,7 +345,7 @@ export function TripMap({ f, books, route }: { f?: FinaleView; books: BookSpan[]
   const replay = () => { press(); void play(); };
   return (
     <div ref={wrap} className={`tripmap card cream ${phase}`} style={{ padding: '0.9rem 0.8rem 0.7rem' }}>
-      <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`A map of the trip across the Bible: ${hops.length} hops from ${homeRef}. Tap to replay it.`} onClick={replay}>
+      <svg className="map" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`A map of the trip across the Bible: ${hops.length} hops from ${homeRef}. Tap to replay it.`} onClick={replay}>
         <defs>
           <radialGradient id="map-ball" cx="0.34" cy="0.3" r="0.75">
             <stop offset="0" stopColor="#ffe3d2" /><stop offset="0.2" stopColor="#ff8a5c" /><stop offset="0.5" stopColor="#e3542a" /><stop offset="0.8" stopColor="#b7310f" /><stop offset="1" stopColor="#6e1904" />
@@ -382,7 +372,6 @@ export function TripMap({ f, books, route }: { f?: FinaleView; books: BookSpan[]
         <text x={x(homePos)} y={base + 30} textAnchor={homePos < 0.15 ? 'start' : homePos > 0.85 ? 'end' : 'middle'} fontSize="13" fontFamily="Poppins, sans-serif" fontWeight="600" fill="#9a6c0c">
           {homeRef} · home
         </text>
-        <text ref={label} className="map-label" y={ground - 36} textAnchor="middle" />
         {hops.length > 0 && (
           <>
             <ellipse ref={shadow} className="map-shadow" cx={x(homePos)} cy={ground + 1} rx={R} ry={2.6} fill="#3b1f12" opacity={0.45} />
@@ -409,27 +398,21 @@ export function TripMap({ f, books, route }: { f?: FinaleView; books: BookSpan[]
           <span className="muted small info-text">{phase === 'playing' ? 'Setting off from home…' : 'Tap the map to watch the trip again, or tap an arc to see where it went.'}</span>
         )}
         {hops.length > 0 && phase !== 'playing' && (
-          <button className="map-replay" onClick={replay} aria-label="Replay the trip"><Icon name="hop" size="1rem" strokeWidth={2.4} /> Replay</button>
+          <button className="map-replay" onClick={replay} aria-label="Replay the trip"><Icon name="hop" strokeWidth={2.4} /> Replay</button>
         )}
       </div>
     </div>
   );
 }
 
-/** A verse reference with the book's short name, for the labels along the road. */
-function shortRef(ref: string, books: BookSpan[]): string {
-  const book = books.filter((b) => ref.startsWith(b.name + ' ')).sort((x, y) => y.name.length - x.name.length)[0];
-  return book ? `${book.short} ${ref.slice(book.name.length + 1)}` : ref;
-}
-
-const SP = 84, PAD = 48, ROAD_H = 128;
+const SP = 108, PAD = 70, ROAD_H = 186;
 
 /**
  * Rule 13.4: the replay, as a road. Every stop of the journey is a milestone along a winding road;
  * tap one (or step with the arrows, or swipe the card) and the ball hops there and the stop's verse
  * opens below, with the word you came in by and the word you left by.
  */
-function EmmausRoad({ f, books }: { f: FinaleView; books: BookSpan[] }) {
+function EmmausRoad({ f }: { f: FinaleView }) {
   const n = f.road.length;
   const [i, setI] = useState(0);
   const [dir, setDir] = useState(1);
@@ -438,7 +421,7 @@ function EmmausRoad({ f, books }: { f: FinaleView; books: BookSpan[] }) {
   const prevAt = useRef<{ x: number; y: number } | null>(null);
   const swipe = useRef<number | null>(null);
   const roadW = PAD * 2 + Math.max(0, n - 1) * SP;
-  const pts = useMemo(() => f.road.map((_, k) => ({ x: PAD + k * SP, y: 58 + Math.sin(k * 1.15 + 0.6) * 18 })), [f]);
+  const pts = useMemo(() => f.road.map((_, k) => ({ x: PAD + k * SP, y: 92 + Math.sin(k * 1.15 + 0.6) * 16 })), [f]);
   const roadD = useMemo(() => {
     if (!pts.length) return '';
     let d = `M${pts[0].x - PAD} ${pts[0].y} L${pts[0].x} ${pts[0].y}`;
@@ -510,7 +493,7 @@ function EmmausRoad({ f, books }: { f: FinaleView; books: BookSpan[] }) {
                 aria-current={k === i ? 'step' : undefined}
               >
                 <span className="em-dot">{isHome ? <Icon name="home" size="1.05em" strokeWidth={2.4} /> : k}</span>
-                <span className="em-ref">{shortRef(st.ref, books)}</span>
+                <span className={`em-ref ${k % 2 ? 'low' : ''}`}>{st.ref}</span>
               </button>
             );
           })}

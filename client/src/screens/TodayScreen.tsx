@@ -2,7 +2,7 @@
 // The screen holds still; tapping the Bible flips through it, just for the fun of it.
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { GamesHub } from '../../../shared/minigames.ts';
-import { GAMES } from '../../../shared/minigames.ts';
+import { lineup } from '../../../shared/minigames.ts';
 import type { TodayView } from '../../../shared/types.ts';
 import { api } from '../api.ts';
 import { useApp } from '../app-store.ts';
@@ -202,13 +202,13 @@ export function TodayScreen({ today, clockSkew }: { today: TodayView; clockSkew:
         </section>
 
         {games?.enabled && (
-          <button className="smoke home-games" onClick={() => { press(); navigate('/games'); }} aria-label={`Daily games: ${games.plays.filter((g) => g.done).length} of ${GAMES.length} played today`}>
+          <button className="smoke home-games" onClick={() => { press(); navigate('/games'); }} aria-label={`Daily games: ${games.plays.filter((g) => g.done).length} of ${lineup().length} played today`}>
             <span className="hg-text">
               <b>Daily games</b>
-              <small>{games.plays.every((g) => g.done) ? 'All played. New ones tomorrow.' : `${games.plays.filter((g) => g.done).length} of ${GAMES.length} played today`}</small>
+              <small>{games.plays.every((g) => g.done) ? 'All played. New ones tomorrow.' : `${games.plays.filter((g) => g.done).length} of ${lineup().length} played today`}</small>
             </span>
             <span className="hg-orbs" aria-hidden="true">
-              {GAMES.map((g) => {
+              {lineup().map((g) => {
                 const done = games.plays.find((x) => x.game === g.id)?.done;
                 return <span key={g.id} className={`orb tone-${GAME_TONES[g.id]} ${done ? 'done' : ''}`}><Icon name={done ? 'sparkle' : g.icon} /></span>;
               })}

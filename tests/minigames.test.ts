@@ -2,7 +2,7 @@
 // server keeps the clock.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { BOOKS } from '../shared/books.ts';
-import type { BabbleState, BookItState, WhoState } from '../shared/minigames.ts';
+import { lineup, type BabbleState, type BookItState, type WhoState } from '../shared/minigames.ts';
 import { Game } from '../server/app/game.ts';
 import { Db } from '../server/db.ts';
 import { setClock } from '../server/game/clock.ts';
@@ -157,6 +157,37 @@ describe('the rounds', () => {
     expect(s.done).toBe(true);
     expect(s.answers.map((a) => a.right)).toEqual([true, true, false, true, true]);
     expect(s.result!.line).toBe('4 of 5 right.');
+  });
+
+  it('the lineup is the three flagship games; a result carries your record and how everyone did', () => {
+    expect(lineup().map((g) => g.id)).toEqual(['bookit', 'whoartthou', 'babble']);
+    const { player: q } = game.createGuest();
+    at('2026-11-20T21:00:00Z');
+    expect(mg.hub(q, tz).plays.map((x) => x.game)).toEqual(['bookit', 'whoartthou', 'babble']);
+    // two guesses, like the first player in the Book It round above; the late player lost
+    const answer = bible.ref(mg.bookItVerse('2026-11-20')).book;
+    const wrong = answer === 0 ? 65 : 0;
+    mg.start(q, 'bookit', tz);
+    mg.answer(q, 'bookit', tz, { book: wrong });
+    const r = (mg.answer(q, 'bookit', tz, { book: answer }) as BookItState).result!;
+    expect(r.share).toContain(wrong < answer ? '➡️' : '⬅️');
+    expect(r.stats).toEqual({ played: 1, won: 1, streak: 1, best: 1 });
+    expect(r.distribution.map((d) => d.label)).toEqual(['1', '2', '3', '4', '5', '6', 'X']);
+    expect(r.distribution.find((d) => d.label === '2')).toEqual({ label: '2', count: 2, mine: true });
+    expect(r.distribution.find((d) => d.label === 'X')).toEqual({ label: 'X', count: 1, mine: false });
+    // the next day, first time: the run grows
+    at('2026-11-21T16:00:00Z');
+    mg.start(q, 'bookit', tz);
+    const r2 = (mg.answer(q, 'bookit', tz, { book: bible.ref(mg.bookItVerse('2026-11-21')).book }) as BookItState).result!;
+    expect(r2.stats).toEqual({ played: 2, won: 2, streak: 2, best: 2 });
+    expect(r2.distribution.find((d) => d.mine)).toEqual({ label: '1', count: 1, mine: true });
+  });
+
+  it('a resting game is still playable by its address', () => {
+    expect(lineup().some((g) => g.id === 'fixyoureyes')).toBe(false);
+    const { player: p } = game.createGuest();
+    at('2026-11-20T22:00:00Z');
+    expect(mg.start(p, 'fixyoureyes', tz).done).toBe(false);
   });
 
   it('the action games keep only results that could have happened', () => {

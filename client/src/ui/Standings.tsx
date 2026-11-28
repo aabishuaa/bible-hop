@@ -38,7 +38,7 @@ function useLiveStandings(date: string): { s: StandingsView | null; err: string 
   return { s, err };
 }
 
-const W = 720, H = 312, PAD_L = 18, PAD_R = 18, BASE = 240, TOP = 66;
+const W = 720, H = 236, PAD_L = 18, PAD_R = 18, BASE = 222, TOP = 26;
 /** How far out the curve is drawn, in standard deviations. The very top and bottom sit at the ends. */
 const Z = 2.5;
 
@@ -79,43 +79,41 @@ function BellCurve({ s }: { s: StandingsView }) {
   // every finisher as a tick, spread by rank: the curve's shape is the field's shape
   const m = Math.min(s.players, 160);
   const rug = Array.from({ length: m }, (_, j) => xOf(zOf(m === 1 ? 1 : j / (m - 1))));
-  const labelX = you === null ? 0 : Math.min(W - 118, Math.max(118, you));
   return (
-    <svg className="bell" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={s.you ? `You finished ahead of ${s.you.better}% of today's players.` : "Where today's players finished."}>
-      <defs>
-        <linearGradient id="bell-fill" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#fff4dc" stopOpacity="0.3" />
-          <stop offset="1" stopColor="#fff4dc" stopOpacity="0.04" />
-        </linearGradient>
-        <linearGradient id="bell-gold" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#ffd866" stopOpacity="0.95" />
-          <stop offset="1" stopColor="#d49a12" stopOpacity="0.4" />
-        </linearGradient>
-        {you !== null && (
-          <clipPath id="bell-beaten">
-            <rect className="bell-clip" x="0" y="0" height={H} style={{ width: you }} />
-          </clipPath>
-        )}
-      </defs>
-      <path d={area} fill="url(#bell-fill)" />
-      {you !== null && <path d={area} fill="url(#bell-gold)" clipPath="url(#bell-beaten)" className="bell-beaten" />}
-      <path d={line} fill="none" stroke="#f3d084" strokeWidth="3" strokeLinejoin="round" className="bell-line" pathLength={1} />
-      <g className="bell-rug">{rug.map((x, i) => <line key={i} x1={x} x2={x} y1={BASE + 4} y2={BASE + 13} />)}</g>
-      <line x1={PAD_L} x2={W - PAD_R} y1={BASE} y2={BASE} stroke="rgba(255,240,215,0.4)" strokeWidth="1.5" />
-      <text x={xOf(-Z)} y={BASE + 42} textAnchor="start" className="bell-tick">0%</text>
-      <text x={xOf(0)} y={BASE + 42} textAnchor="middle" className="bell-tick">50%</text>
-      <text x={xOf(Z)} y={BASE + 42} textAnchor="end" className="bell-tick">100%</text>
+    <div className="bell-wrap">
       {you !== null && s.you && (
-        <g className="bell-you">
-          <line x1={you} x2={you} y1={TOP - 18} y2={BASE} stroke="#fdf1da" strokeWidth="2.5" strokeDasharray="6 5" />
-          <circle cx={you} cy={youY} r="8" fill="#ffd866" stroke="#2a140a" strokeWidth="3" />
-          <g transform={`translate(${labelX}, ${TOP - 26})`}>
-            <rect x="-112" y="-28" width="224" height="40" rx="20" fill="#f6d27a" />
-            <text x="0" y="0" textAnchor="middle" className="bell-you-label">You · {s.you.score} manna</text>
-          </g>
-        </g>
+        <span className="bell-tag" style={{ left: `${Math.min(86, Math.max(14, (you / W) * 100))}%` }}>You · {s.you.score} manna</span>
       )}
-    </svg>
+      <svg className="bell" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={s.you ? `You finished ahead of ${s.you.better}% of today's players.` : "Where today's players finished."}>
+        <defs>
+          <linearGradient id="bell-fill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stopColor="#fff4dc" stopOpacity="0.3" />
+            <stop offset="1" stopColor="#fff4dc" stopOpacity="0.04" />
+          </linearGradient>
+          <linearGradient id="bell-gold" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stopColor="#ffd866" stopOpacity="0.95" />
+            <stop offset="1" stopColor="#d49a12" stopOpacity="0.4" />
+          </linearGradient>
+          {you !== null && (
+            <clipPath id="bell-beaten">
+              <rect className="bell-clip" x="0" y="0" height={H} style={{ width: you }} />
+            </clipPath>
+          )}
+        </defs>
+        <path d={area} fill="url(#bell-fill)" />
+        {you !== null && <path d={area} fill="url(#bell-gold)" clipPath="url(#bell-beaten)" className="bell-beaten" />}
+        <path d={line} fill="none" stroke="#f3d084" strokeWidth="3" strokeLinejoin="round" className="bell-line" pathLength={1} vectorEffect="non-scaling-stroke" />
+        <g className="bell-rug">{rug.map((x, i) => <line key={i} x1={x} x2={x} y1={BASE + 3} y2={BASE + 12} vectorEffect="non-scaling-stroke" />)}</g>
+        <line x1={PAD_L} x2={W - PAD_R} y1={BASE} y2={BASE} stroke="rgba(255,240,215,0.4)" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
+        {you !== null && s.you && (
+          <g className="bell-you">
+            <line x1={you} x2={you} y1={0} y2={BASE} stroke="#fdf1da" strokeWidth="2" strokeDasharray="5 5" vectorEffect="non-scaling-stroke" />
+            <circle cx={you} cy={youY} r="7" fill="#ffd866" stroke="#2a140a" strokeWidth="2.5" vectorEffect="non-scaling-stroke" />
+          </g>
+        )}
+      </svg>
+      <div className="bell-ticks" aria-hidden="true"><span>0%</span><span>50%</span><span>100%</span></div>
+    </div>
   );
 }
 

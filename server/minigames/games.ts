@@ -4,7 +4,7 @@ import { BOOKS } from '../../shared/books.ts';
 import type {
   ActionState, BabbleReveal, BabbleState, BookItState, GameId, GameResult, GameState, GamesHub, PlaySummary, VerseRefView, WhoState,
 } from '../../shared/minigames.ts';
-import { GAMES } from '../../shared/minigames.ts';
+import { GAMES, lineup } from '../../shared/minigames.ts';
 import type { Game, PlayerRow } from '../app/game.ts';
 import { GameError } from '../app/errors.ts';
 import { FIRST_FOURTEEN, MORE_VERSES } from '../app/seed.ts';
@@ -194,6 +194,47 @@ export class MiniGames {
     return n;
   }
 
+  /** The player's record: rounds played and won, the current run of days, and the longest. */
+  private record(p: PlayerRow, id: GameId, date: string): GameResult['stats'] {
+    const rows = this.db.all<{ date: string; won: number }>('SELECT date, won FROM minigame_plays WHERE player_id = ? AND game = ? AND finished_at IS NOT NULL ORDER BY date', p.id, id);
+    let best = 0, run = 0, prev = '';
+    for (const r of rows) {
+      run = prev && addDays(prev, 1) === r.date ? run + 1 : 1;
+      best = Math.max(best, run);
+      prev = r.date;
+    }
+    return { played: rows.length, won: rows.filter((r) => r.won).length, streak: this.streak(p, id, date), best };
+  }
+
+  /** Which bucket a finished round falls in, for the day's spread of results. */
+  private bucket(id: GameId, s: Stored, won: boolean): string {
+    if (id === 'bookit') return won ? String(Math.min(6, (s as StoredBookIt).guesses.length)) : 'X';
+    if (id === 'whoartthou') return won ? String((s as StoredWho).clue + 1) : 'X';
+    if (id === 'babble') return String((s as StoredBabble).answers.filter((a) => a.right).length);
+    return won ? 'won' : 'lost';
+  }
+
+  private spreadCache = new Map<string, { at: number; counts: Map<string, number> }>();
+
+  /** How everyone did today, by bucket. Counted at most every few seconds. */
+  private distribution(id: GameId, date: string, mine: string): GameResult['distribution'] {
+    const key = `${id}|${date}`;
+    const at = this.now();
+    let hit = this.spreadCache.get(key);
+    if (!hit || at - hit.at > 5000) {
+      const counts = new Map<string, number>();
+      for (const r of this.db.all<{ state: string; won: number }>('SELECT state, won FROM minigame_plays WHERE game = ? AND date = ? AND finished_at IS NOT NULL LIMIT 20000', id, date)) {
+        const b = this.bucket(id, JSON.parse(r.state) as Stored, !!r.won);
+        counts.set(b, (counts.get(b) ?? 0) + 1);
+      }
+      hit = { at, counts };
+      this.spreadCache.set(key, hit);
+      if (this.spreadCache.size > 30) this.spreadCache.delete(this.spreadCache.keys().next().value!);
+    }
+    const labels = id === 'bookit' ? ['1', '2', '3', '4', '5', '6', 'X'] : id === 'whoartthou' ? ['1', '2', '3', '4', '5', 'X'] : id === 'babble' ? ['5', '4', '3', '2', '1', '0'] : ['won', 'lost'];
+    return labels.map((label) => ({ label, count: hit!.counts.get(label) ?? 0, mine: label === mine }));
+  }
+
   private others(id: GameId, date: string): { players: number; wonPct: number } {
     const r = this.db.get<{ n: number; w: number }>('SELECT COUNT(*) AS n, COALESCE(SUM(won), 0) AS w FROM minigame_plays WHERE game = ? AND date = ? AND finished_at IS NOT NULL', id, date)!;
     return { players: r.n, wonPct: r.n ? Math.round((100 * r.w) / r.n) : 0 };
@@ -214,7 +255,7 @@ export class MiniGames {
   hub(p: PlayerRow, tz: unknown): GamesHub {
     const date = this.dateFor(tz);
     const r = this.game.worldFor(date).rules;
-    const plays: PlaySummary[] = GAMES.map((g) => {
+    const plays: PlaySummary[] = lineup().map((g) => {
       const row = this.row(p, g.id, date);
       const done = !!row?.finished_at;
       return { game: g.id, played: !!row, done, won: !!row?.won, line: row && done ? this.summaryLine(g.id, JSON.parse(row.state) as Stored, !!row.won) : row ? 'Under way' : g.timing, streak: this.streak(p, g.id, date) };
@@ -485,15 +526,20 @@ export class MiniGames {
   private result(p: PlayerRow, id: GameId, date: string, s: Stored, row: PlayRow): GameResult {
     const no = this.game.puzzleNo(date);
     const won = !!row.won;
+    const stats = this.record(p, id, date);
+    // a result just saved is counted at once, so the player always sees their own bar
+    this.spreadCache.delete(`${id}|${date}`);
+    const distribution = this.distribution(id, date, this.bucket(id, s, won));
+    const extra = { stats, distribution };
     const head = `Bible Hopping · ${GAMES.find((g) => g.id === id)!.name} #${no}`;
     const streak = this.streak(p, id, date);
     if (id === 'bookit') {
       const b = s as StoredBookIt;
       const answer = this.bible.ref(b.verse).book;
       const secs = ((b.endedAt ?? row.finished_at ?? b.startedAt) - b.startedAt) / 1000;
-      const arrows = b.guesses.map((g) => (g === answer ? '✅' : g < answer ? '⬇️' : '⬆️')).join('');
+      const arrows = b.guesses.map((g) => (g === answer ? '✅' : g < answer ? '➡️' : '⬅️')).join('');
       return {
-        won, score: row.score ?? 0, streak,
+        won, score: row.score ?? 0, streak, ...extra,
         title: won ? 'Booked it!' : 'Time’s up',
         line: won ? `${BOOKS[answer].name}, in ${b.guesses.length} ${b.guesses.length === 1 ? 'guess' : 'guesses'} and ${Math.min(20, secs).toFixed(1)} seconds.` : `It was ${BOOKS[answer].name}.`,
         share: `${head}\n📖 ${won ? `${b.guesses.length} ${b.guesses.length === 1 ? 'guess' : 'guesses'} · ${Math.min(20, secs).toFixed(1)}s` : 'not this time'}\n${arrows}`,
@@ -507,7 +553,7 @@ export class MiniGames {
       const squares = c.clues.map((_, i) => (i < w.clue ? '🟥' : i === w.clue ? (won ? '🟩' : '🟥') : '⬜')).join('');
       const citeId = this.game.refs.parse(c.cite)?.id;
       return {
-        won, score: row.score ?? 0, streak,
+        won, score: row.score ?? 0, streak, ...extra,
         title: won ? `It was ${c.name}!` : `It was ${c.name}`,
         line: won ? `Named on clue ${w.clue + 1} of ${c.clues.length}. ${c.summary}` : c.summary,
         share: `${head}\n${squares}${won ? ` clue ${w.clue + 1}` : ''}`,
@@ -519,7 +565,7 @@ export class MiniGames {
       const b = s as StoredBabble;
       const right = b.answers.filter((a) => a.right).length;
       return {
-        won, score: row.score ?? 0, streak,
+        won, score: row.score ?? 0, streak, ...extra,
         title: right === b.items.length ? 'A perfect round!' : right >= 4 ? 'Well discerned!' : right >= 2 ? 'Not bad' : 'Babbled!',
         line: `${right} of ${b.items.length} right.`,
         share: `${head}\n${b.answers.map((a) => (a.right ? '✅' : '❌')).join('')} ${right}/${b.items.length}`,
@@ -529,14 +575,14 @@ export class MiniGames {
     const r = (s as StoredAction).result ?? {};
     if (id === 'fixyoureyes') {
       return {
-        won, score: row.score ?? 0, streak,
+        won, score: row.score ?? 0, streak, ...extra,
         title: r.reached ? 'You reached Jesus' : 'Lord, save me!',
         line: r.reached ? `In ${((r.ms as number) / 1000).toFixed(1)} seconds, with your eyes fixed ${r.steady}% of the way.` : `You sank ${Math.round((r.distance as number) * 100)}% of the way across. Immediately Jesus stretched forth his hand, and caught you.`,
         share: `${head}\n🌊 ${r.reached ? `Reached Jesus in ${((r.ms as number) / 1000).toFixed(1)}s · eyes fixed ${r.steady}%` : `Sank ${Math.round((r.distance as number) * 100)}% of the way`}`,
       };
     }
     return {
-      won, score: row.score ?? 0, streak,
+      won, score: row.score ?? 0, streak, ...extra,
       title: (r.fed as number) >= 5000 ? 'They did all eat, and were filled' : 'Many were fed',
       line: `${(r.fed as number).toLocaleString('en-US')} fed and ${r.baskets} of 12 baskets gathered.`,
       share: `${head}\n🍞🐟 ${(r.fed as number).toLocaleString('en-US')} fed · ${r.baskets} of 12 baskets`,
