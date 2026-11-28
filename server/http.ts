@@ -10,6 +10,7 @@ import type { Game, PlayerRow } from './app/game.ts';
 import { GameError } from './app/game.ts';
 import { registerDesk } from './desk/routes.ts';
 import { localDate, setClock, setClockOffset } from './game/clock.ts';
+import { MiniGames } from './minigames/games.ts';
 
 export interface AppOptions {
   /** Where the built client lives. When absent, only the API is served. */
@@ -138,6 +139,19 @@ export function buildApp(game: Game, opts: AppOptions = {}): FastifyInstance {
   app.delete('/api/bookmarks/:verse', async (req, reply) => {
     game.journal.remove(player(req, reply).id, (req.params as { verse: string }).verse);
     return { ok: true };
+  });
+
+  // the daily mini games
+  const games = new MiniGames(game);
+  app.get('/api/games', async (req, reply) => games.hub(player(req, reply), (req.query as Query).tz));
+  app.post('/api/games/:id/start', async (req, reply) => games.start(player(req, reply), (req.params as { id: string }).id, ((req.body ?? {}) as Body).tz));
+  app.post('/api/games/:id/answer', async (req, reply) => {
+    const b = (req.body ?? {}) as Body;
+    return games.answer(player(req, reply), (req.params as { id: string }).id, b.tz, b);
+  });
+  app.post('/api/games/:id/finish', async (req, reply) => {
+    const b = (req.body ?? {}) as Body;
+    return games.finish(player(req, reply), (req.params as { id: string }).id, b.tz, b);
   });
 
   app.post('/api/track', async (req, reply) => {

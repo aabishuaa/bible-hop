@@ -765,6 +765,11 @@ function PlayerDetail({ id, admin }: { id: string; admin: Admin }) {
         <input className="field" style={{ width: '10.5rem' }} type="date" value={lastWin} onChange={(e) => setLastWin(e.target.value)} />
         <button className="btn small ghost" disabled={act.busy || !reason || !streak} onClick={() => run('restoreStreak', { streak: Number(streak), lastWin })}>Restore streak</button>
       </div>
+      <div className="desk-toolbar" style={{ marginTop: '0.5rem', alignItems: 'center' }}>
+        <span className="small"><b>Plus:</b> {p.plus ? 'yes' : 'no'} · Sunday School used: {p.practiceUsed}</span>
+        <button className="btn small ghost" disabled={act.busy || !reason} onClick={() => run(p.plus ? 'revokePlus' : 'grantPlus')}>{p.plus ? 'Remove Plus' : 'Give Plus (testers)'}</button>
+        <button className="btn small ghost" disabled={act.busy || !reason || !p.practiceUsed} onClick={() => run('resetPractice')}>Reset Sunday School count</button>
+      </div>
       <div className="desk-toolbar" style={{ marginTop: '0.5rem' }}>
         {p.name && <button className="btn small ghost" disabled={act.busy || !reason} onClick={() => run('removeName')}>Remove display name</button>}
         {admin.role === 'head' && <button className="btn small" style={{ background: 'var(--red)' }} disabled={act.busy || !reason} onClick={() => confirm('Delete this player and everything they typed?') && run('delete')}>Delete account</button>}

@@ -358,6 +358,73 @@ class SoundEngine {
   }
 
   /** Home again. */
+  // ---------------------------------------------------------------------- the mini games
+
+  /** The clock: a soft tick, sharper in the last seconds. */
+  tick(urgent = false): void {
+    this.noise({ dur: 0.012, gain: urgent ? 0.07 : 0.035, freq: urgent ? 5200 : 3800, q: 2 });
+    this.tone({ freq: urgent ? 1320 : 990, dur: 0.035, gain: urgent ? 0.06 : 0.03 });
+  }
+
+  correct(at = 0): void {
+    this.pluck(N.E5, at, 0.14);
+    this.pluck(N.A5, at + 0.08, 0.13);
+    this.bell(N.E6, at + 0.16, 0.07, 0.8);
+  }
+
+  wrong(at = 0): void {
+    this.tone({ at, freq: 196, to: 140, dur: 0.22, gain: 0.14, type: 'square', lowpass: 900 });
+    this.noise({ at, dur: 0.08, gain: 0.05, type: 'lowpass', freq: 600 });
+  }
+
+  /** A card turning over to show the answer. */
+  reveal(at = 0): void {
+    this.noise({ at, dur: 0.35, gain: 0.05, type: 'bandpass', freq: 900, to: 3200, attack: 0.08 });
+  }
+
+  fanfare(at = 0): void {
+    [N.D5, N.Fs5, N.A5].forEach((f, i) => this.bell(f, at + i * 0.09, 0.1, 1.2, (i - 1) * 0.3));
+    this.bell(N.D6, at + 0.3, 0.12, 1.6);
+    this.tone({ at, freq: N.D4, dur: 1.2, gain: 0.05, attack: 0.1, wet: 0.5, type: 'triangle' });
+  }
+
+  lose(at = 0): void {
+    [N.A4, N.Fs4, N.D4].forEach((f, i) => this.tone({ at: at + i * 0.16, freq: f, dur: 0.5, gain: 0.08, type: 'triangle', wet: 0.4 }));
+  }
+
+  timeUp(): void {
+    this.bell(N.A4, 0, 0.1, 0.9);
+    this.bell(N.E4, 0.12, 0.08, 1.1);
+  }
+
+  splash(at = 0, gain = 0.12): void {
+    this.noise({ at, dur: 0.45, gain, type: 'lowpass', freq: 1800, to: 300, attack: 0.01 });
+    this.noise({ at: at + 0.02, dur: 0.25, gain: gain * 0.5, type: 'highpass', freq: 3000 });
+  }
+
+  wind(at = 0, gain = 0.07): void {
+    this.noise({ at, dur: 1.6, gain, type: 'bandpass', freq: 400, to: 1600, q: 0.6, attack: 0.4 });
+  }
+
+  thunder(at = 0): void {
+    this.noise({ at, dur: 1.8, gain: 0.16, type: 'lowpass', freq: 220, to: 60, attack: 0.02, wet: 0.6 });
+  }
+
+  pop(at = 0): void {
+    this.tone({ at, freq: 520, to: 980, dur: 0.07, gain: 0.07 });
+  }
+
+  crumb(at = 0): void {
+    this.noise({ at, dur: 0.03, gain: 0.05, freq: 5000, q: 3 });
+    this.tone({ at, freq: N.B5, dur: 0.06, gain: 0.04, type: 'triangle' });
+  }
+
+  /** A challenge met: a bright run up and a shimmer. */
+  challenge(at = 0): void {
+    [N.D5, N.Fs5, N.A5, N.D6].forEach((f, i) => this.bell(f, at + i * 0.07, 0.09, 0.9, (i - 1.5) * 0.25));
+    this.noise({ at: at + 0.25, dur: 0.6, gain: 0.04, type: 'highpass', freq: 6500, wet: 0.6, attack: 0.05 });
+  }
+
   /** A verse kept in the Journal: a ribbon laid in the page. */
   keep(): void {
     this.noise({ dur: 0.05, gain: 0.04, freq: 3000, q: 1 });

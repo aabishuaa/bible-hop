@@ -44,7 +44,7 @@ const at = (iso: string) => setClock(Date.parse(iso));
 
 beforeAll(async () => {
   at('2026-11-16T18:00:00Z'); // noon in Chicago
-  game = new Game({ db: new Db(':memory:'), rateLimit: false, launchDate: '2026-11-16' });
+  game = new Game({ db: new Db(':memory:'), rateLimit: false, launchDate: '2026-11-16', ruleOverrides: { 'feature.challenges': false } });
   app = buildApp(game, { devTools: true });
   await app.ready();
 });

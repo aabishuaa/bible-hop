@@ -101,6 +101,8 @@ export interface GameOptions {
   rateLimit?: boolean;
   /** The date of puzzle #1, for a first start. Fixed once the game has launched (rule 17.7). */
   launchDate?: string;
+  /** Changes to the default rules for a brand-new database (tests use it to switch challenges off). */
+  ruleOverrides?: Partial<RuleSet>;
 }
 
 const hashToken = (token: string) => createHash('sha256').update(token).digest('hex');
@@ -138,7 +140,7 @@ export class Game {
     this.rateLimit = opts.rateLimit ?? true;
     this.ai = new AiService(this.db, opts.aiBackend ?? null, () => this.aiSettings);
     this.journal = new Journal(this.db, this.bible, () => this.now());
-    this.firstStart(opts.launchDate);
+    this.firstStart(opts.launchDate, opts.ruleOverrides);
   }
 
   now(): number {
@@ -148,10 +150,10 @@ export class Game {
   // -------------------------------------------------------------------------------------------
   // first start
 
-  private firstStart(launchDate?: string): void {
+  private firstStart(launchDate?: string, ruleOverrides?: Partial<RuleSet>): void {
     const at = this.now();
     if (!this.db.get('SELECT version FROM rule_sets LIMIT 1')) {
-      this.db.run('INSERT INTO rule_sets (version, rules, effective_from, created_at, created_by, note) VALUES (1, ?, ?, ?, ?, ?)', JSON.stringify(defaultRules()), '0001-01-01', at, 'system', 'The defaults of Appendix A');
+      this.db.run('INSERT INTO rule_sets (version, rules, effective_from, created_at, created_by, note) VALUES (1, ?, ?, ?, ?, ?)', JSON.stringify({ ...defaultRules(), ...ruleOverrides }), '0001-01-01', at, 'system', 'The defaults of Appendix A');
     }
     if (!this.db.get('SELECT version FROM lexicons LIMIT 1')) {
       this.db.run('INSERT INTO lexicons (version, config, effective_from, created_at, created_by, note) VALUES (1, ?, ?, ?, ?, ?)', JSON.stringify(defaultLexiconConfig()), '0001-01-01', at, 'system', 'Appendix B and Appendix C');
@@ -395,7 +397,16 @@ export class Game {
       firstTime: !p.guide_done && !any,
       wins: counts.wins,
       played: counts.played,
+      plus: !!p.plus,
+      practice: this.practiceAllowance(p, date),
     };
+  }
+
+  /** Sunday School: a number of journeys free, unlimited with Plus. */
+  practiceAllowance(p: PlayerRow, date: string): { used: number; free: number; left: number | null } {
+    const free = this.worldFor(date).rules['practice.freeJourneys'];
+    const used = p.practice_used ?? 0;
+    return { used, free, left: p.plus ? null : Math.max(0, free - used) };
   }
 
   updateSettings(p: PlayerRow, body: { restDay?: unknown; wording?: unknown }): void {
@@ -952,7 +963,7 @@ export class Game {
     this.db.run("DELETE FROM journeys WHERE player_id = ? AND kind = 'guide' AND status = 'playing'", p.id);
   }
 
-  /** Rule 18.3: practice from a random approved verse or any verse the player picks, as often as they like. */
+  /** Rule 18.3: practice from a random approved verse or any verse the player picks. The first journeys are free; Plus has no limit. */
   startPractice(p: PlayerRow, tzRaw: unknown, body: { verse?: unknown; mode?: unknown }): JourneyView {
     const tz = this.requireTz(tzRaw);
     const at = this.now();
@@ -970,7 +981,13 @@ export class Game {
       home = pool[Math.floor(Math.random() * pool.length)] ?? this.refs.parse('John 3:16')!.id!;
     }
     const mode: JourneyMode = body.mode === 'berean' && w.rules['feature.berean'] ? 'berean' : 'standard';
-    return this.view(this.startSide(p, tz, 'practice', home, undefined, mode), p, at);
+    const allowance = this.practiceAllowance(p, date);
+    if (allowance.left === 0) {
+      throw new GameError('practice_limit', `You have used your ${allowance.free} free Sunday School journeys. Infinity mode, coming with Bible Hopping Plus, lets you practise without limit.`, 403);
+    }
+    const j = this.startSide(p, tz, 'practice', home, undefined, mode);
+    this.db.run('UPDATE players SET practice_used = practice_used + 1 WHERE id = ?', p.id);
+    return this.view(j, p, at);
   }
 
   /** The Concordance, the one extra help that exists only in Sunday School: up to 50 verses holding the chosen word. */

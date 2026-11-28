@@ -10,6 +10,7 @@ import type { GraceLoss, HopRecord, HowIdentified, LossReason, MessageView, Outc
 import type { ParsedRef } from '../bible/refs.ts';
 import { scoreReference } from '../bible/refs.ts';
 import type { Family } from '../lexicon/lexicon.ts';
+import { challengeFor, meets } from './challenges.ts';
 import type { HopIntent, Journey, JourneyEvent, World } from './journey.ts';
 
 export type AiVerdict =
@@ -309,6 +310,9 @@ function continueHop(w: World, j: Journey, intent: HopIntent, ref: ParsedRef | n
 
   // 8. every check passed: the hop happens (rule 3.9)
   const from = j.current;
+  // a challenge on offer here is judged before anything moves
+  const offered = challengeFor(w, j, from);
+  const challenge = offered && meets(w, offered, door, verse) ? { kind: offered.kind, word: offered.word, times: offered.times } : undefined;
   // 1) the door closes in both verses, for every form of the word
   (j.doors[from] ??= []).push(door.key);
   (j.doors[verse] ??= []).push(door.key);
@@ -319,7 +323,7 @@ function continueHop(w: World, j: Journey, intent: HopIntent, ref: ParsedRef | n
   const base = tierValue(tier, r);
   const refScore = isHome ? 'none' : scoreReference(w.bible, ref, verse);
   const multiplier = refScore === 'exact' ? r['ref.exact'] : refScore === 'chapter' ? r['ref.chapter'] : refScore === 'book' ? r['ref.book'] : 1;
-  const manna = roundHalfUp(base * multiplier);
+  const manna = roundHalfUp(base * multiplier * (challenge?.times ?? 1));
   j.manna += manna;
   // 4) strikes reset, the hop count rises, the player stands on the destination
   j.strikes = 0;
@@ -351,6 +355,7 @@ function continueHop(w: World, j: Journey, intent: HopIntent, ref: ParsedRef | n
     how,
     at,
   };
+  if (challenge) hop.challenge = challenge;
   j.path.push(hop);
   // the Golden Road is open only from the verse a Golden Nugget brought you to
   j.goldenRoad = undefined;
@@ -364,7 +369,7 @@ function continueHop(w: World, j: Journey, intent: HopIntent, ref: ParsedRef | n
     j.finishedAt = at;
     j.pending = null;
     log(j, { type: 'attempt', code: 'hop.home', door: word, typed: intent.typed, reference: intent.refText, verse }, at);
-    return result('home', message('hop.home', { word, n: hop.calf }), { hop });
+    return result('home', message('hop.home', { word, n: hop.calf }), { hop, notes: challenge ? [message('challenge.met', challenge)] : [] });
   }
 
   // 6) Widow's Oil, once per verse per journey, before the lamp check (rules 7.3 and 7.4)
@@ -389,7 +394,10 @@ function continueHop(w: World, j: Journey, intent: HopIntent, ref: ParsedRef | n
   if (j.oil <= 0) losses.push('lamp');
   // with the Golden Road open there is always a way out, so the fish cannot swallow you
   if (openDoors(w, j, verse).length === 0 && j.goldenRoad !== verse) losses.push('fish');
-  const golden = tier === 'nugget' ? [message('hop.nugget', { n: r['calf.multiplier'] * tierValue('nugget', r) })] : [];
+  const golden = [
+    ...(challenge ? [message('challenge.met', challenge)] : []),
+    ...(tier === 'nugget' ? [message('hop.nugget', { n: r['calf.multiplier'] * tierValue('nugget', r) })] : []),
+  ];
   if (losses.length) {
     const out = graceOrLose(w, j, losses, at);
     return { ...out, message: ok, notes: [...golden, ...(out.message ? [out.message] : [])], hop };

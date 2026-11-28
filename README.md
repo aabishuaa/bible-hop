@@ -112,7 +112,27 @@ Cookies are marked secure automatically when the request arrives over HTTPS.
 6. A verse that doesn't hold your word is a **strike**; three in a row and the rooster crows. Once a
    day, **Grace** can rescue you. Midnight cannot be rescued.
 
+7. Now and then a verse carries a **challenge**: a *double door* (hop through the glowing word for
+   double manna) or a *tag-along* word (land in a verse that also has it for double manna).
+
 The full rules are in the game under *How to play*.
+
+### Beyond the daily journey
+
+- **Journal**: tap the ribbon beside any verse to keep it, with a note of your own. The Journal also
+  ranks your go-to verses (the ones you hop to most) and shows where each stands among all players.
+- **Daily games**: five small games, one timed round of each a day, the same for everyone.
+  *Book It* (which book is this verse from?), *Who Art Thou?* (name the Bible character from five
+  clues), *Bible or Babble* (is that saying really in the Bible?), *Fix Your Eyes* (keep your eyes on
+  Jesus to walk on the water) and *Loaves and Fishes* (feed the five thousand, then gather the twelve
+  baskets). The server keeps every clock, so a timed answer cannot arrive late.
+- **Sunday School** gives 10 practice journeys free. *Bible Hopping Plus* (Infinity mode) has no
+  limit; until payments exist, a Head Scribe can give Plus to testers from the player's page at the
+  Desk. The number of free journeys is a rule the Desk can change.
+
+All of these are switches at the Desk (Rules, Features), along with the chance of a challenge and
+what a met challenge multiplies by. The Desk's Today page also lists the ten verses players hop to
+most, today, this week or ever.
 
 ## How it is built
 
@@ -127,7 +147,10 @@ The full rules are in the game under *How to play*.
 | The player API and storage | `server/app/`, `server/http.ts`, `server/db.ts` | Fastify and SQLite (Node's built-in driver). |
 | The Scribe's Desk (Part II) | `server/desk/`, `client/src/desk/` | Roles, two-factor sign-in, versioned rules and lexicon, the audit log. |
 | The game you see | `client/src/` | React, with the page turn drawn in WebGL (`client/src/fx/flip.ts`), sound made in the browser (`fx/sound.ts`) and haptics (`fx/haptics.ts`). |
-| Tests | `tests/` | The directive's 25 acceptance tests, the API, the clock and the Desk. |
+| Challenges | `server/game/challenges.ts` | Drawn from the date and the verse, so everyone meets the same one. |
+| The Journal | `server/app/journal.ts`, `client/src/screens/JournalScreen.tsx` | Kept verses, notes, verse counts. |
+| The daily games | `server/minigames/`, `client/src/minigames/` | Content, timing and scoring on the server; the two action games are drawn on canvas. |
+| Tests | `tests/` | The directive's 25 acceptance tests, the API, the clock, the Desk, challenges, the Journal and the games (their content is checked against the Bible text). |
 
 The only emoji in the whole game are on the share card, where the directive requires them so the card
 can be pasted anywhere; everywhere else the game draws its own icons.

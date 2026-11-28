@@ -7,6 +7,7 @@ import type { BookSpan, ChainStep, DoorView, JourneyView, PendingView, TokenView
 import type { Bible } from '../bible/bible.ts';
 import { WORDINGS } from '../bible/bible.ts';
 import { tzLabel } from './clock.ts';
+import { challengeFor } from './challenges.ts';
 import { cordCount, doorState, lookBackCost, rulesOf } from './engine.ts';
 import { verseText } from './finale.ts';
 import type { Journey, World } from './journey.ts';
@@ -103,6 +104,7 @@ export function journeyView(w: World, j: Journey, wording: Wording, at: number):
     pending: j.status === 'playing' ? pendingView(w, j, wording) : null,
     lookBack: lookBackCost(w, j),
     goldenRoad: j.status === 'playing' && j.goldenRoad !== undefined && j.goldenRoad === j.current && !j.pending,
+    challenge: j.pending ? null : challengeFor(w, j),
     canChangeMode: j.status === 'playing' && !j.modeFixed && r['feature.berean'] && j.kind !== 'guide',
     lateMinutes: j.status === 'playing' && minutesLeft !== null && minutesLeft <= r['clock.lateWarningMinutes'] ? minutesLeft : undefined,
     features: { wordingSwitch: r['feature.wordingSwitch'], berean: r['feature.berean'], concordance: j.kind === 'practice' },

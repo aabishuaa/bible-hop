@@ -76,6 +76,15 @@ export interface HopRecord {
   calf: number;
   how: HowIdentified;
   at: number;
+  /** A challenge this hop met, which multiplied its manna. */
+  challenge?: ChallengeView;
+}
+
+/** A challenge on offer: a word to hop through (door) or a word the next verse should share (tagalong). */
+export interface ChallengeView {
+  kind: 'door' | 'tagalong';
+  word: string;
+  times: number;
 }
 
 export interface MessageView {
@@ -153,6 +162,8 @@ export interface JourneyView {
   lookBack: LookBackInfo;
   /** A Golden Nugget brought the player here: one tap takes them home. */
   goldenRoad: boolean;
+  /** A challenge on offer where the player stands; `family` is the door key it is about. */
+  challenge: (ChallengeView & { family: string }) | null;
   /** Berean Mode can still be switched on or off (before the first hop). */
   canChangeMode: boolean;
   /** Minutes left, when under the late-start warning (rule 12.8). */
@@ -271,6 +282,10 @@ export interface PlayerView {
   firstTime: boolean;
   wins: number;
   played: number;
+  /** Bible Hopping Plus (Infinity mode and the like). */
+  plus: boolean;
+  /** The Sunday School allowance: journeys used, the free number, and how many are left (null with Plus). */
+  practice: { used: number; free: number; left: number | null };
 }
 
 export interface DayResult {

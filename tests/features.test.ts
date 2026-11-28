@@ -1,8 +1,9 @@
-// Golden Nuggets, the Golden Road, the badges and the standings.
+// Golden Nuggets, the Golden Road, the badges, the standings and the challenges.
 import { describe, expect, it } from 'vitest';
+import { challengeFor } from '../server/game/challenges.ts';
 import { goldenRoadHome } from '../server/game/engine.ts';
 import { earned } from '../server/game/finale.ts';
-import { Player, W, fresh, lexicon, text, tick, verseId } from './helpers.ts';
+import { Player, W, fresh, lexicon, text, tick, verseId, world } from './helpers.ts';
 
 describe('Golden Nuggets and the Golden Road', () => {
   it('a word found in exactly one other verse is a Golden Nugget worth 50', () => {
@@ -63,5 +64,70 @@ describe('badges', () => {
     expect(b).toContain('fishers');
     expect(b).not.toContain('law');
     expect(b).not.toContain('covenant');
+  });
+});
+
+describe('challenges', () => {
+  const CW = world({ 'feature.challenges': true });
+  const home = verseId('Psalm 119:105');
+  /** A journey on the first date (from a run of dates) whose home verse carries a challenge of the given kind. */
+  const journeyWith = (kind: 'door' | 'tagalong') => {
+    for (let d = 1; d <= 120; d++) {
+      const date = new Date(Date.UTC(2026, 10, 1) + d * 86_400_000).toISOString().slice(0, 10);
+      const j = fresh('Psalm 119:105', CW);
+      j.date = date;
+      const c = challengeFor(CW, j);
+      if (c?.kind === kind) return { j, c };
+    }
+    throw new Error(`no ${kind} challenge found`);
+  };
+  /** A verse other than home that holds both families, with enough words to be recognized by its text. */
+  const meeting = (a: string, b: string) => {
+    const fa = lexicon.family(a)!, fb = lexicon.family(b)!;
+    for (const v of fa.verses) if (v !== home && lexicon.verseHas(v, fb) && CW.bible.text(v, 'kjv').split(' ').length >= 8) return v;
+    return undefined;
+  };
+
+  it('are the same for everyone at the same verse on the same day', () => {
+    const { j, c } = journeyWith('door');
+    const other = fresh('Psalm 119:105', CW);
+    other.date = j.date;
+    expect(challengeFor(CW, other)).toEqual(c);
+    expect(challengeFor(W, other)).toBeNull(); // and nothing at all with the feature off
+  });
+
+  it('a double door doubles the manna of a hop through it, and then closes', async () => {
+    const { j, c } = journeyWith('door');
+    const fam = lexicon.family(c.family)!;
+    const to = [...fam.verses].find((v) => v !== home && CW.bible.text(v, 'kjv').split(' ').length >= 8)!;
+    const p = new Player(j, CW);
+    const r = await p.hop(c.word, CW.bible.text(to, 'kjv'));
+    expect(r.kind).toBe('hop');
+    expect(r.hop!.challenge).toMatchObject({ kind: 'door', times: 2 });
+    expect(r.hop!.manna).toBe(r.hop!.base * 2);
+    expect(r.notes.map((n) => n.code)).toContain('challenge.met');
+    // back home after a look back, the door is open again and so is the challenge
+    p.lookBack();
+    expect(challengeFor(CW, p.j)).toEqual(c);
+  });
+
+  it('a tag-along word cannot be a door here, and doubles the manna when the next verse holds it', async () => {
+    const { j, c } = journeyWith('tagalong');
+    const tag = lexicon.family(c.family)!;
+    expect(lexicon.verseHas(home, tag)).toBe(false);
+    const doors = lexicon.verseFamilies(home).filter((f) => lexicon.tier(f, CW.rules) !== 'wall' && lexicon.tier(f, CW.rules) !== 'crumb');
+    let hopped = false;
+    for (const d of doors) {
+      const to = meeting(d.key, tag.key);
+      if (to === undefined) continue;
+      const p = new Player(structuredClone(j), CW);
+      const r = await p.hop(lexicon.formsIn(home, d)[0].form, CW.bible.text(to, 'kjv'));
+      if (r.kind !== 'hop') continue;
+      expect(r.hop!.challenge).toMatchObject({ kind: 'tagalong', word: c.word });
+      expect(r.hop!.manna).toBe(r.hop!.base * 2);
+      hopped = true;
+      break;
+    }
+    expect(hopped).toBe(true);
   });
 });

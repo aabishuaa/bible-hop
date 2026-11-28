@@ -16,7 +16,8 @@ const refs = new RefParser(bible);
 const recognizer = new Recognizer(bible, lexicon, refs);
 
 export function world(overrides: Partial<RuleSet> = {}): World {
-  return { bible, lexicon, refs, recognizer, rules: { ...defaultRules(), ...overrides } };
+  // challenges are an extra beyond the directive, so its numbers are checked with them off
+  return { bible, lexicon, refs, recognizer, rules: { ...defaultRules(), 'feature.challenges': false, ...overrides } };
 }
 
 export const W = world();

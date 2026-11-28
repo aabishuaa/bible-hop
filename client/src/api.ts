@@ -2,6 +2,7 @@
 import type {
   ActionResult, ConcordanceView, FinaleView, HistoryView, JournalView, JourneyView, PlayerView, RevelationView, StandingsView, TodayView,
 } from '../../shared/types.ts';
+import type { GameId, GameState, GamesHub } from '../../shared/minigames.ts';
 
 export class ApiError extends Error {
   constructor(
@@ -92,6 +93,10 @@ export const api = {
   bookmarks: () => call<{ verses: number[] }>('GET', '/api/bookmarks'),
   saveBookmark: (verse: number, note?: string, source?: string) => call<{ verse: number; note: string }>('PUT', '/api/bookmarks', { verse, note, source }),
   removeBookmark: (verse: number) => call<{ ok: true }>('DELETE', `/api/bookmarks/${verse}`),
+  games: () => call<GamesHub>('GET', `/api/games?${q({ tz })}`),
+  gameStart: (id: GameId) => call<GameState>('POST', `/api/games/${id}/start`, { tz }),
+  gameAnswer: (id: GameId, body: Record<string, unknown>) => call<GameState>('POST', `/api/games/${id}/answer`, { tz, ...body }),
+  gameFinish: (id: GameId, body: Record<string, unknown>) => call<GameState>('POST', `/api/games/${id}/finish`, { tz, ...body }),
   track: (type: string) => call<{ ok: true }>('POST', '/api/track', { type }).catch(() => undefined),
 };
 

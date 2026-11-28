@@ -60,6 +60,9 @@ export interface RuleSet {
   'data.typedTextDays': number;
   'limits.hopsPerSecond': number;
   'limits.hopsPerDay': number;
+  'challenge.chance': number;
+  'challenge.multiplier': number;
+  'practice.freeJourneys': number;
   // Feature switches (rule 16.7)
   'feature.irregularForms': boolean;
   'feature.aiCheck': boolean;
@@ -68,6 +71,9 @@ export interface RuleSet {
   'feature.sundaySchool': boolean;
   'feature.revelation': boolean;
   'feature.achievements': boolean;
+  'feature.challenges': boolean;
+  'feature.minigames': boolean;
+  'feature.minigamesPlusOnly': boolean;
 }
 
 export type RuleKey = keyof RuleSet;
@@ -144,6 +150,9 @@ export const RULE_SPECS: RuleSpec[] = [
   N('data.typedTextDays', 30, 0, 365, 'Data', 'Days typed text is kept'),
   N('limits.hopsPerSecond', 1, 1, 10, 'Data', 'Hop attempts per second, per player'),
   N('limits.hopsPerDay', 300, 50, 2000, 'Data', 'Hop attempts per day, per player'),
+  N('challenge.chance', 0.3, 0, 1, 'Challenges', 'Share of verses that carry a challenge (a double door or a tag-along)', 0.05),
+  N('challenge.multiplier', 2, 1, 5, 'Challenges', 'What a met challenge multiplies the hop\u2019s manna by', 0.5),
+  N('practice.freeJourneys', 10, 0, 1000, 'Sunday School', 'Sunday School journeys a player gets free (Plus is unlimited)'),
   F('feature.irregularForms', true, 'Irregular forms count as the same word (spake = speak)'),
   F('feature.aiCheck', true, 'The AI check for paraphrases and other translations'),
   F('feature.wordingSwitch', true, 'Players can switch between the KJV and the WEB'),
@@ -151,6 +160,9 @@ export const RULE_SPECS: RuleSpec[] = [
   F('feature.sundaySchool', true, 'Sunday School (practice)'),
   F('feature.revelation', true, "Revelation (the day's shared results)"),
   F('feature.achievements', true, 'Achievements'),
+  F('feature.challenges', true, 'Challenges: double doors and tag-along words'),
+  F('feature.minigames', true, 'The daily mini games'),
+  F('feature.minigamesPlusOnly', false, 'Only Bible Hopping Plus players can play the mini games'),
 ];
 
 export function defaultRules(): RuleSet {

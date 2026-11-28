@@ -570,6 +570,7 @@ function EmmausRoad({ f, books }: { f: FinaleView; books: BookSpan[] }) {
               {hop.revisit && <span className="pill soft">return visit, {hop.oil} oil</span>}
               {hop.widow > 0 && <span className="pill soft"><Icon name="lamp" size="0.8rem" /> +{hop.widow} oil</span>}
               {hop.calf > 0 && <span className="pill soft">Fatted Calf +{hop.calf}</span>}
+              {hop.challenge && <span className="pill soft">{hop.challenge.kind === 'door' ? 'double door' : 'tag-along'} ×{hop.challenge.times}</span>}
             </span>
           )}
         </div>

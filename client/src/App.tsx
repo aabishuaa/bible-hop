@@ -14,6 +14,7 @@ import { StandingsScreen } from './screens/StandingsScreen.tsx';
 import { TodayScreen } from './screens/TodayScreen.tsx';
 
 const Desk = lazy(() => import('./desk/Desk.tsx'));
+const Games = lazy(() => import('./minigames/GamesRoute.tsx'));
 
 function Loading({ text }: { text: string }) {
   return (
@@ -82,6 +83,13 @@ export function App() {
   else if (route === '/settings') screen = <SettingsScreen today={today} />;
   else if (route === '/how') screen = <HowToPlay />;
   else if (route === '/journal') screen = <JournalScreen />;
+  else if (route === '/games' || route.startsWith('/games/')) {
+    screen = (
+      <Suspense fallback={<Loading text="Setting the table…" />}>
+        <Games path={route} />
+      </Suspense>
+    );
+  }
   else if (route.startsWith('/standings/')) screen = <StandingsScreen date={route.split('/')[2]} />;
   else if (route.startsWith('/revelation/')) screen = <RevelationScreen date={route.split('/')[2]} />;
   else screen = <TodayScreen today={today} clockSkew={skew.current} />;

@@ -62,7 +62,8 @@ export function JourneyScreen({ initial, clockSkew, coach, onFinale, onExit }: J
   const [busy, setBusy] = useState(false);
   const [turning, setTurning] = useState(false);
   const [shake, setShake] = useState<string | null>(null);
-  const [gain, setGain] = useState<{ n: number; tier: Tier; key: number; home?: boolean } | null>(null);
+  const [gain, setGain] = useState<{ n: number; tier: Tier; key: number; home?: boolean; times?: number } | null>(null);
+  const [stamp, setStamp] = useState<{ key: number; times: number; kind: 'door' | 'tagalong' } | null>(null);
   const [status, setStatus] = useState(false);
   const [lookBack, setLookBack] = useState(false);
   const [report, setReport] = useState(false);
@@ -293,8 +294,13 @@ export function JourneyScreen({ initial, clockSkew, coach, onFinale, onExit }: J
         setTurning(true);
         await turnPages(previous, next, tier, hop.home);
         setTurning(false);
-        setGain({ n: hop.manna + hop.calf, tier: hop.tier, key: Date.now(), home: hop.home });
+        setGain({ n: hop.manna + hop.calf, tier: hop.tier, key: Date.now(), home: hop.home, times: hop.challenge?.times });
         sound.manna(hop.manna + hop.calf, 0.05);
+        if (hop.challenge) {
+          setStamp({ key: Date.now(), times: hop.challenge.times, kind: hop.challenge.kind });
+          sound.challenge(0.15);
+          haptics.play([10, 30, 10, 30, 24]);
+        }
         if (hop.widow) window.setTimeout(() => sound.oilRefill(hop.widow), 500);
         if (hop.tier === 'nugget' && !hop.home) setNugget(true);
         if (coach && coach.steps[coachStep]?.fill) setCoachStep((s) => s + 1);
@@ -480,9 +486,19 @@ export function JourneyScreen({ initial, clockSkew, coach, onFinale, onExit }: J
               <div className="rule" />
               <BookmarkButton verse={j.current.id} refLabel={j.current.ref} source="page" className="on-paper" />
             </div>
+            {j.challenge && stillPlaying && (
+              <div key={`${j.current.id}-${j.challenge.kind}`} className={`challenge-banner ${j.challenge.kind}`} data-snap role="note">
+                <span className="cb-badge" aria-hidden="true">×{j.challenge.times}</span>
+                <span className="cb-text">
+                  {j.challenge.kind === 'door'
+                    ? <><b>Double door.</b> Hop through &ldquo;{pretty(j.challenge.word)}&rdquo; for {j.challenge.times === 2 ? 'double' : `×${j.challenge.times}`} manna.</>
+                    : <><b>Tag-along.</b> Land in a verse that also has &ldquo;{pretty(j.challenge.word)}&rdquo; for {j.challenge.times === 2 ? 'double' : `×${j.challenge.times}`} manna. It isn&rsquo;t in this verse, so pick another door.</>}
+                </span>
+              </div>
+            )}
             <p className={`verse ${verseClass} ink-in`} data-snap key={`${j.current.id}-${shownWording}`} aria-label={`${j.current.ref}. Tap a word to choose it as your door.`}>
               <span className="num" aria-hidden="true">{j.current.verse}</span>
-              <VerseWords verse={j.current} wording={shownWording} chosen={door?.key ?? null} entry={entryKey} spot={coachNow?.spot} shake={shake} onTap={tapWord} />
+              <VerseWords verse={j.current} wording={shownWording} chosen={door?.key ?? null} entry={entryKey} spot={coachNow?.spot} shake={shake} double={j.challenge?.kind === 'door' ? j.challenge.family : undefined} onTap={tapWord} />
             </p>
             {j.goldenRoad && !door && (
               <button className="golden-road" disabled={busy || turning} onClick={() => { press(); void run(() => api.golden(ref)); }}>
@@ -496,6 +512,7 @@ export function JourneyScreen({ initial, clockSkew, coach, onFinale, onExit }: J
                 <motion.div key={gain.key} className={`gain tier-${gain.home ? 'home' : gain.tier}`} initial={false} onAnimationEnd={() => setGain(null)} aria-live="polite">
                   <TierBadge tier={gain.home ? 'home' : gain.tier} size={30} />
                   +{gain.n} <small>manna</small>
+                  {gain.times && <span className="gain-x2">×{gain.times}</span>}
                 </motion.div>
               )}
             </AnimatePresence>
@@ -529,6 +546,12 @@ export function JourneyScreen({ initial, clockSkew, coach, onFinale, onExit }: J
         </div>
       </div>
 
+      {stamp && (
+        <div key={stamp.key} className="x2-stamp" aria-live="polite" onAnimationEnd={() => setStamp(null)}>
+          <b>×{stamp.times}</b>
+          <span>{stamp.kind === 'door' ? 'Double door!' : 'Tag-along!'}</span>
+        </div>
+      )}
       {nugget && <NuggetFlash onDone={() => setNugget(false)} />}
       {celebrate && <HomeCelebration finale={celebrate} onDone={() => { const f = celebrate; setCelebrate(null); onFinale(f); }} />}
       <Cover journeyId={j.id} spread={spread} stageRef={bookRef} rightRef={rightPage} leftRef={leftPage} />
@@ -562,6 +585,7 @@ export function JourneyScreen({ initial, clockSkew, coach, onFinale, onExit }: J
                         <Icon name="home" size="0.75rem" strokeWidth={2.4} /> also at home
                       </span>
                     )}
+                    {j.challenge?.kind === 'door' && j.challenge.family === door.key && <span className="slip-x2">×{j.challenge.times} double door</span>}
                   </div>
                 </div>
                 <button className="icon-btn on-paper close" onClick={() => { press(); setDoor(null); setDoorWord(''); }} aria-label="Choose a different word">
@@ -641,6 +665,9 @@ export function JourneyScreen({ initial, clockSkew, coach, onFinale, onExit }: J
                     Hop
                   </button>
                 </div>
+                {j.challenge?.kind === 'tagalong' && (
+                  <div className="slip-tag"><span className="slip-x2">×{j.challenge.times}</span> Tag-along: land in a verse that also has &ldquo;{pretty(j.challenge.word)}&rdquo;.</div>
+                )}
                 {bonus && door.tier !== 'crumb' && (
                   <div className="bonus-hint">
                     <span>With the reference:</span>

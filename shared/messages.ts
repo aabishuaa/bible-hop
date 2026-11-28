@@ -21,6 +21,12 @@ const CATALOG: Record<string, { tone: Tone; text: (p: P) => string }> = {
       return parts.join(' \u00b7 ');
     },
   },
+  'challenge.met': {
+    tone: 'good',
+    text: (p) => (p.kind === 'door'
+      ? `Double door! Hopping through \u201c${p.word}\u201d multiplied this hop\u2019s manna by ${p.times}.`
+      : `Tag-along! This verse has \u201c${p.word}\u201d too, so this hop\u2019s manna is multiplied by ${p.times}.`),
+  },
   'hop.nugget': { tone: 'good', text: (p) => `Golden Nugget! The Golden Road home is open: one tap takes you home for ${p.n} manna.` },
   'hop.goldenHome': { tone: 'good', text: (p) => `Home by the Golden Road. The feast adds ${p.n} manna.` },
   'golden.closed': { tone: 'warn', text: () => 'The Golden Road opens only from the verse a Golden Nugget brought you to.' },

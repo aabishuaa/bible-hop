@@ -21,7 +21,7 @@ let head: Admin, scribe: Admin, observer: Admin;
 
 beforeAll(async () => {
   at(NOW);
-  game = new Game({ db: new Db(':memory:'), rateLimit: false, launchDate: '2026-11-16' });
+  game = new Game({ db: new Db(':memory:'), rateLimit: false, launchDate: '2026-11-16', ruleOverrides: { 'feature.challenges': false } });
   app = buildApp(game, { devTools: true });
   await app.ready();
   desk = new Desk(game);

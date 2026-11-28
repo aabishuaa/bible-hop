@@ -63,6 +63,13 @@ export function HowToPlay() {
             <p><b>Golden Nuggets</b> are words found in just one other verse. Hop through one and the <b>Golden Road</b> opens: one tap takes you straight home, with a feast of 100 manna.</p>
           </div>
 
+          <h2 className="display">Challenges, the <em>extras</em></h2>
+          <div className="card cream">
+            <p>Now and then a verse carries a challenge. Everyone who reaches that verse on the same day meets the same one.</p>
+            <p style={{ marginTop: '0.5rem' }}><b>Double door.</b> One word on the page glows with ×2. Hop through it and that hop&rsquo;s manna is doubled.</p>
+            <p style={{ marginTop: '0.5rem' }}><b>Tag-along.</b> You&rsquo;re given a word that isn&rsquo;t in your verse, so it can&rsquo;t be your door. Hop through any other word into a verse that also has it, and that hop&rsquo;s manna is doubled.</p>
+          </div>
+
           <h2 className="display">Lamp oil, the <em>energy</em></h2>
           <div className="card cream">
             <p>Your lamp holds 12 drops. A hop burns 1. Going back to a verse you already visited burns 3. Landing on a verse that mentions oil refills 3. If the oil runs out before you are home, the lamp goes out.</p>

@@ -81,9 +81,9 @@ export class Journal {
   }
 
   /** Every verse's place among all players' most-used verses, worked out at most once a minute. */
-  private everyoneRanks(): Map<number, number> {
+  private everyoneRanks(fresh = false): Map<number, number> {
     const at = this.now();
-    if (this.everyone && at - this.everyone.at < 60_000) return this.everyone.rank;
+    if (!fresh && this.everyone && at - this.everyone.at < 60_000) return this.everyone.rank;
     const rows = this.db.all<{ verse: number; n: number }>("SELECT verse, COUNT(*) AS n FROM verse_uses WHERE kind = 'daily' OR kind = 'practice' GROUP BY verse ORDER BY n DESC");
     const r = ranks(rows.map((x) => x.n));
     const rank = new Map(rows.map((x, i) => [x.verse, r[i]]));
@@ -98,7 +98,9 @@ export class Journal {
     const bookmarks: Bookmark[] = kept.map((b) => ({ verse: b.verse, ref: this.bible.label(b.verse), ...this.text(b.verse, preferred), note: b.note, savedAt: b.created_at, uses: uses.get(b.verse) ?? 0 }));
     const rows = this.db.all<{ verse: number; n: number; last: number }>('SELECT verse, COUNT(*) AS n, MAX(at) AS last FROM verse_uses WHERE player_id = ? GROUP BY verse ORDER BY n DESC, last DESC LIMIT 25', playerId);
     const r = ranks(rows.map((x) => x.n));
-    const everyone = this.everyoneRanks();
+    let everyone = this.everyoneRanks();
+    // a verse new to the board since the last count: count again rather than show no place
+    if (rows.some((x) => !everyone.has(x.verse))) everyone = this.everyoneRanks(true);
     const top: TopVerse[] = rows.map((x, i) => ({ verse: x.verse, ref: this.bible.label(x.verse), ...this.text(x.verse, preferred), count: x.n, rank: r[i], everyoneRank: everyone.get(x.verse) ?? null, lastUsed: x.last, saved: savedSet.has(x.verse) }));
     let hops = 0;
     for (const n of uses.values()) hops += n;

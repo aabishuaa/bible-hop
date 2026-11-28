@@ -28,11 +28,13 @@ export interface WordsProps {
   /** A word the guide wants tapped. */
   spot?: string;
   shake?: string | null;
+  /** The door a challenge doubles, if any. */
+  double?: string;
   onTap?: (door: DoorView, word: string, el: HTMLElement) => void;
 }
 
 /** A verse with every word a door (rules 3.2 to 3.5). Arrow keys move between words. */
-export function VerseWords({ verse, wording, chosen, entry, spot, shake, onTap }: WordsProps) {
+export function VerseWords({ verse, wording, chosen, entry, spot, shake, double, onTap }: WordsProps) {
   const tokens = verse.wordings[wording] ?? verse.wordings.kjv ?? verse.wordings.web ?? [];
   const onKey = (e: KeyboardEvent<HTMLElement>) => {
     if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
@@ -51,7 +53,8 @@ export function VerseWords({ verse, wording, chosen, entry, spot, shake, onTap }
         if (t.d === undefined) return <span key={k} style={{ ['--i' as string]: i }}>{pretty(t.s)}</span>;
         const d = verse.doors[t.d];
         const isChosen = chosen === d.key;
-        const cls = `w tier-${d.tier} ${d.state}${isChosen ? ' chosen' : ''}${entry === d.key ? ' entry' : ''}${spot && spot === d.key && !isChosen ? ' spot' : ''}${shake === d.key ? ' shake' : ''}`;
+        const isDouble = double === d.key && d.state === 'open';
+        const cls = `w tier-${d.tier} ${d.state}${isChosen ? ' chosen' : ''}${entry === d.key ? ' entry' : ''}${spot && spot === d.key && !isChosen ? ' spot' : ''}${shake === d.key ? ' shake' : ''}${isDouble ? ' double' : ''}`;
         return (
           <button
             key={k}
@@ -66,6 +69,7 @@ export function VerseWords({ verse, wording, chosen, entry, spot, shake, onTap }
           >
             {pretty(t.s)}
             {d.inHome && d.state === 'open' && !isChosen && <Icon name="home" className="hm" strokeWidth={2.6} />}
+            {isDouble && <span className="x2" aria-hidden="true">×2</span>}
           </button>
         );
       })}

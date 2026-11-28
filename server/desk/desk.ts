@@ -762,7 +762,7 @@ export class Desk {
       const j = JSON.parse(r.data) as Journey;
       return { id: r.id, date: r.date, kind: r.kind, status: r.status, loss: r.loss, manna: r.manna, hops: r.hops, strikes: r.strikes, home: this.game.bible.label(j.home), events: j.events.slice(-80), path: j.path.map((h) => `${h.fromRef} → ${h.toRef} via ${h.doorWord} (+${h.manna})`) };
     });
-    return { player: { id: p.id, name: p.name, scribe: !!p.scribe, treasure: p.treasure, streak: p.streak, bestStreak: p.best_streak, lastWin: p.last_win, restDay: p.rest_day, createdAt: p.created_at }, journeys, notes: this.db.all('SELECT at, text, read_at FROM notes WHERE player_id = ? ORDER BY at DESC LIMIT 20', id) };
+    return { player: { id: p.id, name: p.name, scribe: !!p.scribe, treasure: p.treasure, streak: p.streak, bestStreak: p.best_streak, lastWin: p.last_win, restDay: p.rest_day, createdAt: p.created_at, plus: !!p.plus, practiceUsed: p.practice_used }, journeys, notes: this.db.all('SELECT at, text, read_at FROM notes WHERE player_id = ? ORDER BY at DESC LIMIT 20', id) };
   }
 
   playerAction(admin: Admin, id: string, action: string, reason: string, extra: Record<string, unknown>): void {
@@ -786,6 +786,19 @@ export class Desk {
         this.db.run('UPDATE players SET streak = ?, best_streak = MAX(best_streak, ?), last_win = ? WHERE id = ?', streak, streak, lastWin, id);
         this.audit(admin, 'player.restoreStreak', id, { streak: p.streak, lastWin: p.last_win }, { streak, lastWin }, reason);
         this.db.run('INSERT INTO notes (player_id, at, text) VALUES (?, ?, ?)', id, this.now(), `A Scribe restored your streak to ${streak}. ${reason}`);
+        return;
+      }
+      case 'grantPlus':
+      case 'revokePlus': {
+        const on = action === 'grantPlus' ? 1 : 0;
+        this.db.run('UPDATE players SET plus = ? WHERE id = ?', on, id);
+        this.audit(admin, `player.${action}`, id, { plus: p.plus }, { plus: on }, reason);
+        this.db.run('INSERT INTO notes (player_id, at, text) VALUES (?, ?, ?)', id, this.now(), on ? `A Scribe gave you Bible Hopping Plus: Sunday School has no limit for you now. ${reason}` : `Bible Hopping Plus was removed from your account. ${reason}`);
+        return;
+      }
+      case 'resetPractice': {
+        this.db.run('UPDATE players SET practice_used = 0 WHERE id = ?', id);
+        this.audit(admin, 'player.resetPractice', id, { practiceUsed: p.practice_used }, { practiceUsed: 0 }, reason);
         return;
       }
       case 'removeName': {

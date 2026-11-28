@@ -1,6 +1,8 @@
 // Today (rule 14.1): the title screen. A 3D Bible on dark leather, the wordmark, and the way in.
 // The screen holds still; tapping the Bible flips through it, just for the fun of it.
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import type { GamesHub } from '../../../shared/minigames.ts';
+import { GAMES } from '../../../shared/minigames.ts';
 import type { TodayView } from '../../../shared/types.ts';
 import { api } from '../api.ts';
 import { useApp } from '../app-store.ts';
@@ -17,6 +19,7 @@ import { Logo } from '../ui/Logo.tsx';
 import { useNow } from './journey/parts.tsx';
 
 const DIMS: BookDims = { W: 136, H: 184, D: 14, B: 3.5, ov: 3.5 };
+const GAME_TONES: Record<string, string> = { bookit: 'loaf', whoartthou: 'pearl', babble: 'crimson', fixyoureyes: 'fish', loaves: 'gold' };
 const BOOK_BOX = { w: 300, h: 250 };
 const REST = 'translate(0px, 0px) rotateX(-12deg) rotateY(32deg) rotateZ(-3deg) scale(1)';
 
@@ -38,6 +41,10 @@ export function TodayScreen({ today, clockSkew }: { today: TodayView; clockSkew:
     return { right: plain(9), left: plain(8), leaves: [0, 1, 2, 3, 4, 5, 6].map((i) => ({ front: plain(i), back: plain(i + 1) })) };
   }, []);
   const dest = finished ? `/finale/${today.date}` : p.firstTime && !started ? '/play?guide=1' : '/play';
+  const [games, setGames] = useState<GamesHub | null>(null);
+  useEffect(() => {
+    api.games().then(setGames).catch(() => undefined);
+  }, []);
 
 
   /** Something to play with: the Bible turns to you, opens, riffles its pages, closes and settles back. */
@@ -193,6 +200,22 @@ export function TodayScreen({ today, clockSkew }: { today: TodayView; clockSkew:
             <span>Yesterday</span>
           </button>
         </section>
+
+        {games?.enabled && (
+          <button className="smoke home-games" onClick={() => { press(); navigate('/games'); }} aria-label={`Daily games: ${games.plays.filter((g) => g.done).length} of ${GAMES.length} played today`}>
+            <span className="hg-text">
+              <b>Daily games</b>
+              <small>{games.plays.every((g) => g.done) ? 'All played. New ones tomorrow.' : `${games.plays.filter((g) => g.done).length} of ${GAMES.length} played today`}</small>
+            </span>
+            <span className="hg-orbs" aria-hidden="true">
+              {GAMES.map((g) => {
+                const done = games.plays.find((x) => x.game === g.id)?.done;
+                return <span key={g.id} className={`orb tone-${GAME_TONES[g.id]} ${done ? 'done' : ''}`}><Icon name={done ? 'sparkle' : g.icon} /></span>;
+              })}
+            </span>
+            <Icon name="hop" className="hg-go" strokeWidth={2.4} />
+          </button>
+        )}
 
         <nav className="home2-dock" aria-label="More">
           {dock.filter((t) => t.show).map((t) => (
