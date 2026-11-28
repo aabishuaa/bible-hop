@@ -401,6 +401,8 @@ export interface Bookmark {
   savedAt: number;
   /** How many times the player has hopped to it. */
   uses: number;
+  /** Where it was kept: page (while hopping), road (the Emmaus Road), game, journal. */
+  source: string | null;
 }
 
 /** One of the player's go-to verses: the ones they hop to most. */
@@ -418,10 +420,35 @@ export interface TopVerse {
   saved: boolean;
 }
 
+/** A journey as the Journal remembers it: where it set out, the words it went through, how it ended. */
+export interface JournalTrip {
+  date: string;
+  puzzleNo: number;
+  kind: 'daily' | 'practice';
+  status: JourneyStatus;
+  loss?: LossReason;
+  homeRef: string;
+  /** Each hop: the word it went through and the verse it landed on. */
+  route: { door: string; ref: string; tier: Tier; home: boolean }[];
+  manna: number;
+  startedAt: number;
+}
+
+/** What the player wrote on a day's page. */
+export interface JournalPage {
+  date: string;
+  text: string;
+  updatedAt: number;
+}
+
 export interface JournalView {
   bookmarks: Bookmark[];
   top: TopVerse[];
   totals: { hops: number; verses: number; saved: number };
+  /** The player's journeys, newest first: a page of the Journal for each day they played. */
+  trips: JournalTrip[];
+  pages: JournalPage[];
+  owner: { name: string | null; since: number };
 }
 
 /** For the Desk: the verses players hop to most. */

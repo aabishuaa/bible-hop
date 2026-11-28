@@ -47,10 +47,46 @@ describe('the Journal', () => {
   it('comes along when a guest signs in to an account', () => {
     const { player: acct } = game.createGuest();
     game.register(acct, { name: 'journaler', password: 'a good long password' });
+    game.journal.writePage(acct.id, '2026-11-19', 'Written on the account.');
     const { player: guest } = game.createGuest();
     game.journal.save(guest.id, { verse: verseId('Psalm 23:1'), note: 'kept as a guest' });
+    game.journal.writePage(guest.id, '2026-11-19', 'Written as a guest.');
+    game.journal.writePage(guest.id, '2026-11-18', 'Only the guest wrote here.');
     game.login(game.playerById(guest.id), { name: 'journaler', password: 'a good long password' });
-    expect(game.journal.view(acct.id, 'kjv').bookmarks.map((b) => b.note)).toEqual(['kept as a guest']);
+    const v = game.journal.view(acct.id, 'kjv');
+    expect(v.bookmarks.map((b) => b.note)).toEqual(['kept as a guest']);
+    // a page both wrote on keeps both, the account's first
+    expect(v.pages.map((x) => [x.date, x.text])).toEqual([
+      ['2026-11-19', 'Written on the account.\n\nWritten as a guest.'],
+      ['2026-11-18', 'Only the guest wrote here.'],
+    ]);
+    expect(v.owner.name).toBe('journaler');
+  });
+
+  it('remembers each journey, where it set out and the words it went through', async () => {
+    const { player: p } = game.createGuest();
+    const start = game.startPractice(p, tz, { verse: 'Psalm 119:105' });
+    await game.hop(p, { journeyId: start.id, version: start.version, door: 'light', typed: 'And God said, Let there be light: and there was light.', reference: 'Genesis 1:3' });
+    game.journal.save(p.id, { verse: verseId('Genesis 1:3'), source: 'page' });
+    const v = game.journalView(game.playerById(p.id)!);
+    expect(v.trips).toHaveLength(1);
+    expect(v.trips[0]).toMatchObject({ date: '2026-11-20', kind: 'practice', status: 'playing', homeRef: 'Psalm 119:105' });
+    expect(v.trips[0].route).toEqual([{ door: 'light', ref: 'Genesis 1:3', tier: v.trips[0].route[0].tier, home: false }]);
+    expect(v.bookmarks[0].source).toBe('page');
+    expect(v.owner.name).toBeNull();
+  });
+
+  it('keeps a page of the player’s own writing for each day, and clears it when emptied', () => {
+    const { player: p } = game.createGuest();
+    expect(game.journal.writePage(p.id, '2026-11-20', 'The lamp went out, but the word did not.').text).toBe('The lamp went out, but the word did not.');
+    game.journal.writePage(p.id, '2026-11-20', 'Changed my mind about what to write.');
+    expect(game.journal.view(p.id, 'kjv').pages).toEqual([{ date: '2026-11-20', text: 'Changed my mind about what to write.', updatedAt: expect.any(Number) }]);
+    game.journal.writePage(p.id, '2026-11-20', '   ');
+    expect(game.journal.view(p.id, 'kjv').pages).toEqual([]);
+    expect(() => game.journal.writePage(p.id, 'yesterday', 'x')).toThrow();
+    expect(() => game.journal.writePage(p.id, '2026-12-25', 'not yet')).toThrow();
+    expect(game.journal.writePage(p.id, '2026-11-21', 'already tomorrow somewhere').date).toBe('2026-11-21');
+    expect(game.journal.writePage(p.id, '2026-11-19', 'x'.repeat(5000)).text).toHaveLength(4000);
   });
 });
 

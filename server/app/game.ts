@@ -6,7 +6,7 @@ import { message } from '../../shared/messages.ts';
 import type { RuleSet } from '../../shared/rules.ts';
 import { defaultRules } from '../../shared/rules.ts';
 import type {
-  Achievement, ActionResult, ConcordanceView, DayResult, FinaleView, HistoryView, JourneyKind, JourneyMode, JourneyView,
+  Achievement, ActionResult, ConcordanceView, DayResult, FinaleView, HistoryView, JournalView, JourneyKind, JourneyMode, JourneyView,
   PlayerView, RevelationView, StandingRow, StandingsView, TodayView, Wording,
 } from '../../shared/types.ts';
 import type { Bible } from '../bible/bible.ts';
@@ -1066,10 +1066,16 @@ export class Game {
     return { player: this.playerById(account.id)!, token: this.newSession(account.id), notices };
   }
 
+  /** The Journal, once any journey whose day has ended is settled, so every day's page tells how it ended. */
+  journalView(p: PlayerRow): JournalView {
+    this.sweepPlayer(p.id, this.now());
+    return this.journal.view(p.id, p.wording);
+  }
+
   /** Rule 19.11: honor deletion requests. Removes the player and everything typed by them. */
   deletePlayer(playerId: string): void {
     this.db.tx(() => {
-      for (const table of ['journeys', 'sessions', 'achievements', 'badge_awards', 'notes', 'disputes', 'bookmarks', 'verse_uses', 'minigame_plays']) this.db.run(`DELETE FROM ${table} WHERE player_id = ?`, playerId);
+      for (const table of ['journeys', 'sessions', 'achievements', 'badge_awards', 'notes', 'disputes', 'bookmarks', 'journal_pages', 'verse_uses', 'minigame_plays']) this.db.run(`DELETE FROM ${table} WHERE player_id = ?`, playerId);
       this.db.run('UPDATE ai_calls SET player_id = NULL, typed = NULL WHERE player_id = ?', playerId);
       this.db.run('UPDATE events SET player_id = NULL WHERE player_id = ?', playerId);
       this.db.run('DELETE FROM players WHERE id = ?', playerId);

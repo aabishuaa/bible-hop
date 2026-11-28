@@ -1,0 +1,284 @@
+/* The Journal: a leather-bound book on the desk. Cream paper with a red margin rule, the owner's
+   handwriting in blue-black ink, verses taped in, journeys pasted in like tickets and stamped, a
+   satin ribbon, index tabs on the fore-edge, and pages that turn over the spine. */
+
+.jr-screen {
+  --hand: 'Caveat Variable', 'Caveat', 'Bradley Hand', 'Segoe Print', cursive;
+  --pen: #233a63;
+  --sepia: #6c4a2c;
+  --pencil: #8b7f70;
+  --sheet: #f6ecd5;
+  --rule: rgba(86, 112, 150, 0.3);
+  --rule-gap: 2.05rem;
+  --page-h: max(30rem, calc(100dvh - 12.5rem));
+  --paper-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='p'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.42 0 0 0 0 0.3 0 0 0 0 0.16 0 0 0 0.1 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23p)'/%3E%3C/svg%3E");
+}
+.jr-defs { position: absolute; width: 0; height: 0; overflow: hidden; }
+.jr-desk { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 1.1rem 0.6rem calc(1.6rem + var(--safe-b)); overflow-x: clip; }
+.jr-loading { margin-top: 3rem; font-family: var(--hand); font-size: 1.7rem; color: var(--ink-2); }
+
+/* ---------------------------------------------------------------- the book */
+.jr-book { position: relative; width: min(100%, 31rem); padding: 0.5rem 1.75rem 0.5rem 0.5rem; border-radius: 0.7rem 1rem 1rem 0.7rem;
+  background-color: #3a1c0d;
+  background-image: var(--grain), radial-gradient(120% 90% at 30% 12%, rgba(255, 196, 130, 0.14), transparent 55%), linear-gradient(160deg, #4a2412, #2c1408 70%, #1e0d05);
+  background-size: 256px 256px, auto, auto;
+  box-shadow: inset 0 0 0 1px rgba(255, 220, 170, 0.08), inset 0 1px 0 rgba(255, 230, 190, 0.12), 0 2px 0 #160903, 0 26px 54px rgba(0, 0, 0, 0.55), 0 6px 14px rgba(0, 0, 0, 0.35);
+  transition: transform 1.1s cubic-bezier(0.5, 0.05, 0.25, 1), clip-path 0.6s ease-out; }
+.jr-book::before { content: ''; position: absolute; inset: 0.2rem; border: 1px dashed rgba(227, 188, 108, 0.32); border-radius: 0.55rem 0.85rem 0.85rem 0.55rem; pointer-events: none; }
+.jr-book.spread { --page-h: min(52rem, max(34rem, calc(100dvh - 12rem))); width: min(100%, 70rem); padding: 0.65rem 2.3rem 0.65rem 0.65rem; }
+/* closed on a wide screen: only the right half of the case, centred, until the cover swings over */
+.jr-book.spread.cover-closed { transform: translateX(-25%); clip-path: inset(-3rem -3rem -3rem 50%); }
+.jr-book.spread.cover-opening { clip-path: inset(-3rem -3rem -3rem -3rem); }
+.jr-book.spread.cover-closed .jr-stage > :first-child,
+.jr-book.spread.cover-opening .jr-stage > :first-child { visibility: hidden; }
+
+.jr-block { position: relative; z-index: 2; border-radius: 0.3rem 0.6rem 0.6rem 0.3rem; touch-action: pan-y;
+  /* the edges of the pages beneath */
+  box-shadow: 1px 1px 0 #e9dcc0, 2px 2px 0 #cdb991, 3px 3px 0 #ebdfc4, 4px 4px 0 #c3ae84, 5px 5px 0 #e3d5b6, 7px 7px 10px rgba(0, 0, 0, 0.35); }
+.jr-book.spread .jr-block { border-radius: 0.6rem;
+  box-shadow: -1px 1px 0 #e9dcc0, -2px 2px 0 #cdb991, -3px 3px 0 #ebdfc4, -4px 4px 0 #c3ae84, 1px 1px 0 #e9dcc0, 2px 2px 0 #cdb991, 3px 3px 0 #ebdfc4, 4px 4px 0 #c3ae84, 0 12px 20px rgba(0, 0, 0, 0.35); }
+.jr-block.turning { pointer-events: none; }
+
+.jr-stage { position: relative; perspective: 2400px; perspective-origin: 50% 40%; }
+.jr-stage.spread { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+.jr-stage.single.turning { overflow-x: clip; }
+
+/* a leaf turning over the spine */
+.jr-leaf { position: absolute; z-index: 4; top: 0; left: 0; width: 100%; min-height: 100%; display: grid; transform-origin: 0 50%; transform-style: preserve-3d; will-change: transform; }
+.jr-stage.spread .jr-leaf { left: 50%; width: 50%; bottom: 0; }
+.jr-face { grid-area: 1 / 1; position: relative; -webkit-backface-visibility: hidden; backface-visibility: hidden; }
+.jr-face > .jr-paper { height: 100%; }
+.jr-face.back { transform: rotateY(180deg); }
+.jr-stage.spread .jr-face { overflow: hidden; }
+.jr-shade { position: absolute; inset: 0; z-index: 3; opacity: 0; pointer-events: none; background: linear-gradient(90deg, rgba(60, 35, 10, 0.6), rgba(60, 35, 10, 0.14) 32%, rgba(255, 250, 235, 0.08) 72%, rgba(60, 35, 10, 0.22)); }
+
+/* ---------------------------------------------------------------- the paper */
+.jr-paper { position: relative; box-sizing: border-box; min-height: var(--page-h); padding: 1.5rem 1.1rem 3.2rem 2.35rem; color: #33211a; overflow-wrap: break-word;
+  background-color: var(--sheet);
+  background-image: var(--paper-grain), radial-gradient(140% 100% at 50% 40%, transparent 58%, rgba(140, 95, 45, 0.16)); }
+.jr-paper.single { border-radius: 0.25rem 0.6rem 0.6rem 0.25rem;
+  background-image: var(--paper-grain), linear-gradient(90deg, rgba(80, 50, 20, 0.24), rgba(80, 50, 20, 0.05) 4%, transparent 10%), radial-gradient(140% 100% at 50% 40%, transparent 58%, rgba(140, 95, 45, 0.16)); }
+.jr-paper.left { border-radius: 0.6rem 0 0 0.6rem; padding: 1.9rem 2.6rem 3.2rem 2.8rem;
+  background-image: var(--paper-grain), linear-gradient(270deg, rgba(80, 50, 20, 0.3), rgba(80, 50, 20, 0.07) 5%, transparent 13%), radial-gradient(140% 100% at 50% 40%, transparent 58%, rgba(140, 95, 45, 0.16)); }
+.jr-paper.right { border-radius: 0 0.6rem 0.6rem 0; padding: 1.9rem 2.2rem 3.2rem 3.2rem;
+  background-image: var(--paper-grain), linear-gradient(90deg, rgba(80, 50, 20, 0.3), rgba(80, 50, 20, 0.07) 5%, transparent 13%), radial-gradient(140% 100% at 50% 40%, transparent 58%, rgba(140, 95, 45, 0.16)); }
+/* the red margin rule */
+.jr-paper::before { content: ''; position: absolute; top: 0; bottom: 0; left: 1.7rem; border-left: 1.5px solid rgba(196, 92, 92, 0.32); pointer-events: none; }
+.jr-paper.left::before { left: 2.1rem; }
+.jr-paper.right::before { left: 2.5rem; }
+.jr-paper-body { position: relative; z-index: 1; }
+.jr-folio { position: absolute; bottom: 0.85rem; right: 3.6rem; font-family: var(--hand); font-size: 1.25rem; color: var(--sepia); opacity: 0.85; }
+.jr-paper.left .jr-folio { right: auto; left: 3.6rem; }
+
+/* marbled endpapers, inside the covers */
+.jr-paper.jr-endpaper { padding: 0; overflow: hidden; background: #e6d8b8; }
+.jr-paper.jr-endpaper::before { display: none; }
+/* toward the spine, the endpaper falls into shadow like the pages do */
+.jr-paper.jr-endpaper::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(270deg, rgba(50, 28, 8, 0.38), rgba(50, 28, 8, 0.08) 6%, transparent 14%), radial-gradient(140% 100% at 50% 45%, transparent 55%, rgba(60, 35, 10, 0.25)); }
+.jr-marble { position: absolute; inset: -14%; filter: url(#jr-marble); opacity: 0.62;
+  background: repeating-radial-gradient(circle at 32% 38%, #33496a 0 6px, #b8995a 6px 8px, #ece0c2 8px 12px, #84392d 12px 16px, #ece0c2 16px 20px, #46667f 20px 26px, #d6bf8c 26px 28px, #ece0c2 28px 32px), #e6d8b8; }
+
+/* ---------------------------------------------------------------- the cover */
+.jr-cover { all: unset; box-sizing: border-box; position: absolute; z-index: 12; top: -0.5rem; bottom: -0.5rem; left: -0.5rem; right: -1.75rem; cursor: pointer;
+  transform-origin: 0 50%; transform-style: preserve-3d; -webkit-tap-highlight-color: transparent; }
+.jr-book.spread .jr-cover { top: -0.65rem; bottom: -0.65rem; left: 50%; right: -2.3rem; }
+.jr-cover.opening { pointer-events: none; animation: jr-open 1.1s cubic-bezier(0.55, 0.05, 0.3, 1) forwards; }
+@keyframes jr-open { from { transform: perspective(2200px) rotateY(0deg); } to { transform: perspective(2200px) rotateY(-180deg); } }
+.jr-cover-front, .jr-cover-inside { position: absolute; inset: 0; overflow: hidden; border-radius: 0.6rem 1rem 1rem 0.6rem; -webkit-backface-visibility: hidden; backface-visibility: hidden; }
+.jr-cover-front { display: grid; align-content: center; justify-items: center; gap: 0.75rem; padding: 2rem 1.5rem;
+  background-color: #3d1d0d;
+  background-image: var(--grain), radial-gradient(90% 70% at 40% 28%, rgba(255, 190, 120, 0.17), transparent 60%), radial-gradient(130% 120% at 50% 50%, #4c2512, #2a1307 75%, #1a0b04);
+  background-size: 256px 256px, auto, auto;
+  box-shadow: inset 0 0 0 1px rgba(255, 220, 170, 0.1), inset 0 0 80px rgba(0, 0, 0, 0.5), inset 12px 0 18px -10px rgba(0, 0, 0, 0.75); }
+.jr-cover-front::after { content: ''; position: absolute; inset: 2rem 2.2rem; border-radius: 0.5rem; box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.55), 0 1px 0 rgba(255, 220, 170, 0.1); pointer-events: none; }
+.jr-cover-stitch { position: absolute; inset: 0.85rem; border: 2px dashed rgba(227, 188, 108, 0.42); border-radius: 0.5rem 0.8rem 0.8rem 0.5rem; }
+.jr-cover-emblem { font-size: 2.6rem; color: #d9ae5c; filter: drop-shadow(0 1px 0 rgba(0, 0, 0, 0.7)) drop-shadow(0 0 12px rgba(255, 200, 100, 0.25)); }
+.jr-cover-title { font-family: var(--font-display); font-style: italic; font-weight: 600; font-size: clamp(3.2rem, 14vw, 4.6rem); line-height: 1; letter-spacing: 0.01em;
+  background: linear-gradient(180deg, #fff3c8 0%, #e8c16e 42%, #a87a22 53%, #f0d48c 72%, #c99a3e 100%); -webkit-background-clip: text; background-clip: text; color: transparent;
+  filter: drop-shadow(0 1px 0 rgba(0, 0, 0, 0.8)) drop-shadow(0 0 16px rgba(255, 200, 100, 0.18)); }
+.jr-cover-rule { width: 5rem; height: 1px; background: linear-gradient(90deg, transparent, #d9ae5c, transparent); }
+.jr-cover-name { max-width: 80%; font-size: 0.74rem; font-weight: 600; letter-spacing: 0.34em; text-transform: uppercase; text-align: center; color: rgba(227, 188, 108, 0.9); text-shadow: 0 1px 0 rgba(0, 0, 0, 0.75); }
+.jr-cover-band { position: absolute; top: 0; bottom: 0; right: 2.4rem; width: 0.85rem; background: linear-gradient(90deg, #120703, #36190c 40%, #241108 70%, #0e0502); box-shadow: -2px 0 5px rgba(0, 0, 0, 0.5), 2px 0 4px rgba(0, 0, 0, 0.35); }
+.jr-cover-hint { position: absolute; left: 0; right: 0; bottom: 2.6rem; text-align: center; font-family: var(--hand); font-size: 1.4rem; color: rgba(240, 210, 150, 0.78); animation: nudge 1.8s ease-in-out infinite; }
+.jr-cover-inside { transform: rotateY(180deg); background: #ebdfc3; }
+.jr-cover:focus-visible .jr-cover-front { outline: 3px solid var(--focus); outline-offset: -6px; }
+
+/* ---------------------------------------------------------------- ribbon, corners, tabs */
+.jr-ribbon { position: absolute; z-index: 6; top: -0.6rem; left: 0.62rem; width: 0.58rem; height: calc(100% + 3rem); pointer-events: none;
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0.18), transparent 30%), linear-gradient(180deg, #8e1d14, #b8291d 12%, #c93a2c 50%, #a52317 88%, #8a1b12), #b8291d;
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 50% calc(100% - 0.6rem), 0 100%); }
+.jr-ribbon::after { content: ''; position: absolute; top: 0; bottom: 0; left: 30%; width: 18%; background: linear-gradient(180deg, rgba(255, 220, 200, 0.32), rgba(255, 220, 200, 0.12)); }
+.jr-book.spread .jr-ribbon { left: calc(50% - 0.29rem); }
+
+.jr-corner { all: unset; position: absolute; z-index: 7; bottom: 0; width: 3.2rem; height: 3.2rem; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.jr-corner.next { right: 0; }
+.jr-corner.prev { left: 0; }
+.jr-corner::before { content: ''; position: absolute; bottom: 0; width: 1.55rem; height: 1.55rem; transition: width 0.22s var(--ease-out), height 0.22s var(--ease-out); }
+.jr-corner.next::before { right: 0; border-bottom-right-radius: 0.6rem; background: linear-gradient(315deg, #d9c8a2 0 50%, #fffaf0 50%, #efe3c8 85%, #d8c7a2 100%); box-shadow: -3px -3px 6px -2px rgba(70, 45, 15, 0.32); }
+.jr-corner.prev::before { left: 0; border-bottom-left-radius: 0.6rem; background: linear-gradient(45deg, #d9c8a2 0 50%, #fffaf0 50%, #efe3c8 85%, #d8c7a2 100%); box-shadow: 3px -3px 6px -2px rgba(70, 45, 15, 0.32); }
+.jr-corner:hover::before, .jr-corner:focus-visible::before { width: 2.5rem; height: 2.5rem; }
+
+.jr-tabs { position: absolute; z-index: 1; top: 1.6rem; right: 0.12rem; display: grid; gap: 0.45rem; width: 1.65rem; }
+.jr-book.spread .jr-tabs { top: 2.4rem; right: 0.3rem; width: 2rem; gap: 0.6rem; }
+.jr-tab { all: unset; box-sizing: border-box; cursor: pointer; display: grid; place-items: center; min-height: 5.4rem; padding: 0.6rem 0.15rem; writing-mode: vertical-rl;
+  border-radius: 0 0.45rem 0.45rem 0; font-size: 0.6rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255, 250, 240, 0.94);
+  background: var(--tab); box-shadow: inset 1px 0 0 rgba(255, 255, 255, 0.14), 2px 2px 4px rgba(0, 0, 0, 0.35); transform: translateX(-0.3rem); transition: transform 0.2s var(--ease-out), filter 0.2s; -webkit-tap-highlight-color: transparent; }
+.jr-book.spread .jr-tab { min-height: 6.4rem; font-size: 0.66rem; }
+.jr-tab.gold { --tab: linear-gradient(90deg, #a87a22, #d3a648); color: #2f1d05; }
+.jr-tab.red { --tab: linear-gradient(90deg, #8e2a20, #be4537); }
+.jr-tab.green { --tab: linear-gradient(90deg, #4a6b3a, #6e9455); }
+.jr-tab.blue { --tab: linear-gradient(90deg, #34557a, #5179a3); }
+.jr-tab.on { transform: translateX(0.12rem); filter: brightness(1.12) saturate(1.1); }
+.jr-tab:hover:not(:disabled) { transform: translateX(0); }
+.jr-tab:disabled { opacity: 0.4; cursor: default; }
+.jr-tab:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+/* ---------------------------------------------------------------- under the book */
+.jr-controls { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 0.6rem; width: min(100%, 31rem); margin-top: 3.2rem; }
+.jr-controls.spread { width: min(100%, 44rem); }
+.jr-arrow { all: unset; box-sizing: border-box; cursor: pointer; display: grid; place-items: center; width: 2.9rem; height: 2.9rem; border-radius: 50%; font-size: 1.15rem; color: var(--ink);
+  background: rgba(255, 236, 205, 0.08); box-shadow: inset 0 0 0 1px rgba(255, 226, 180, 0.2); transition: background 0.15s, transform 0.12s; -webkit-tap-highlight-color: transparent; }
+.jr-arrow .icon.back { transform: scaleX(-1); }
+.jr-arrow:hover:not(:disabled) { background: rgba(255, 236, 205, 0.15); }
+.jr-arrow:active:not(:disabled) { transform: scale(0.93); }
+.jr-arrow:disabled { opacity: 0.32; cursor: default; }
+.jr-arrow:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.jr-where { display: grid; justify-items: center; gap: 0.1rem; margin: 0; text-align: center; }
+.jr-where span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--hand); font-size: 1.5rem; line-height: 1.1; color: var(--ink); }
+.jr-where small { font-size: 0.66rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-3); }
+
+/* ---------------------------------------------------------------- handwriting */
+.jr-pencil { margin: 0.4rem 0 0; font-family: var(--hand); font-size: 1.38rem; line-height: 1.35; color: var(--pencil); }
+.jr-pencil.small { margin-top: 1.6rem; font-size: 1.18rem; }
+.jr-link { all: unset; cursor: pointer; margin-left: 0.3rem; font-family: var(--hand); font-size: 1.2rem; color: var(--pen); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+.jr-link:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.jr-hand-h { margin: 1.3rem 0 0.15rem; font-family: var(--hand); font-size: 1.6rem; font-weight: 600; line-height: 1.1; color: var(--sepia); }
+.jr-hand-title { margin: 0.2rem 0 0; font-family: var(--hand); font-size: 2.3rem; font-weight: 700; line-height: 1.05; color: var(--sepia); }
+.jr-hand-title small { font-size: 1.15rem; font-weight: 500; }
+.jr-hand-sub { margin: 0.1rem 0 1.1rem; font-family: var(--hand); font-size: 1.35rem; color: var(--pencil); }
+.jr-print-title { margin: 0.3rem 0 1.1rem; font-family: var(--font-display); font-size: 1.95rem; font-weight: 600; letter-spacing: 0.02em; text-align: center; color: #4a2f1a; }
+.jr-print-title small { font-family: var(--font-ui); font-size: 0.68rem; letter-spacing: 0.12em; color: #8a6a4a; }
+
+/* the owner's ink on ruled lines */
+.jr-inkwell { position: relative; margin-top: 0.2rem; }
+.jr-ink { display: block; box-sizing: border-box; width: 100%; margin: 0; padding: 0.1rem 0.15rem 0; border: 0; border-radius: 0; outline: none; resize: none; overflow: hidden;
+  background-color: transparent;
+  background-image: linear-gradient(transparent calc(var(--rule-gap) - 1px), var(--rule) calc(var(--rule-gap) - 1px));
+  background-size: 100% var(--rule-gap); background-position: 0 0.1rem; background-attachment: local;
+  font-family: var(--hand); font-size: 1.62rem; font-weight: 450; line-height: var(--rule-gap); color: var(--pen); caret-color: var(--pen); }
+.jr-ink::placeholder { color: rgba(139, 127, 112, 0.72); }
+.jr-ink:focus { background-color: rgba(255, 253, 244, 0.4); }
+.jr-inked { position: absolute; right: 0.1rem; bottom: -1.25rem; font-family: var(--hand); font-size: 1.05rem; color: var(--pencil); opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+.jr-inked.saving, .jr-inked.saved, .jr-inked.error { opacity: 1; }
+.jr-inked.error { color: #a3271c; }
+
+/* ---------------------------------------------------------------- a day's page */
+.jr-day-head { position: relative; margin-bottom: 1rem; }
+.jr-day-head.stamped { padding-right: 5.4rem; }
+.jr-weekday { margin: 0; font-family: var(--hand); font-size: 1.5rem; line-height: 1; color: var(--sepia); }
+.jr-today { margin-left: 0.55rem; padding: 0 0.4rem 0.05rem; border-radius: 0.35rem 0.6rem 0.4rem 0.5rem; font-size: 1.1rem; color: #fffaf0; background: rgba(181, 57, 44, 0.85); }
+.jr-date { position: relative; display: inline-block; margin: 0.15rem 0 0; font-family: var(--hand); font-size: 2.35rem; font-weight: 650; line-height: 1.05; color: var(--sepia); }
+.jr-scribble { position: absolute; left: -0.2rem; bottom: -0.6rem; width: calc(100% + 0.5rem); height: 0.75rem; overflow: visible; }
+.jr-scribble path { fill: none; stroke: var(--sepia); stroke-width: 2; stroke-linecap: round; opacity: 0.65; vector-effect: non-scaling-stroke; }
+
+.jr-stamp { position: absolute; z-index: 2; top: -0.7rem; right: -0.5rem; width: 6.4rem; height: 6.4rem; color: #a7302a; opacity: 0.8; transform: rotate(var(--r)); mix-blend-mode: multiply; filter: url(#jr-rough); pointer-events: none; animation: jr-stamp 0.5s cubic-bezier(0.5, 1.7, 0.6, 1) 0.15s both; }
+.jr-stamp.lost { color: #34567c; }
+.jr-stamp circle { fill: none; stroke: currentColor; }
+.jr-stamp text { fill: currentColor; font-family: var(--font-ui); font-size: 11px; font-weight: 700; letter-spacing: 1.5px; }
+.jr-stamp text.long { font-size: 8.4px; letter-spacing: 0.7px; }
+.jr-stamp text.small { font-size: 9.5px; letter-spacing: 1.8px; }
+@keyframes jr-stamp { from { opacity: 0; transform: rotate(var(--r)) scale(1.9); } }
+
+.jr-ticket { position: relative; display: flex; margin: 0.5rem 0 1rem -0.3rem; transform: rotate(var(--r)); border-radius: 0.3rem; background: #fffaf0; color: #3a2a1e;
+  box-shadow: 0 1px 1px rgba(60, 40, 20, 0.12), 0 6px 14px rgba(80, 50, 20, 0.16); }
+.jr-ticket::before, .jr-ticket::after { content: ''; position: absolute; left: 3.9rem; width: 0.9rem; height: 0.9rem; margin-left: -0.45rem; border-radius: 50%; background: var(--sheet); box-shadow: inset 0 1px 2px rgba(60, 40, 20, 0.22); }
+.jr-ticket::before { top: -0.45rem; }
+.jr-ticket::after { bottom: -0.45rem; }
+.jr-ticket-stub { flex: none; width: 3.9rem; display: grid; align-content: center; justify-items: center; padding: 0.5rem 0.2rem; border-right: 2px dashed rgba(130, 90, 45, 0.4); border-radius: 0.3rem 0 0 0.3rem; color: #5a3a12; background: linear-gradient(180deg, #f2d79c, #e3bd6f); }
+.jr-ticket-stub span { font-size: 0.55rem; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; }
+.jr-ticket-stub b { font-family: var(--font-display); font-size: 1.7rem; font-weight: 700; line-height: 1; }
+.jr-ticket-stub .icon { font-size: 1.5rem; }
+.jr-ticket.school .jr-ticket-stub { color: #2f4a26; background: linear-gradient(180deg, #dbe6d1, #b4c8a4); }
+.jr-ticket-body { flex: 1; min-width: 0; padding: 0.55rem 0.75rem 0.6rem 0.9rem; }
+.jr-ticket-kind { margin: 0; font-size: 0.56rem; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: #9a7a55; }
+.jr-route { margin: 0.3rem 0 0; line-height: 1.55; }
+.jr-stop { font-family: var(--font-display); font-size: 1.04rem; font-weight: 700; color: #3a2a1e; white-space: nowrap; }
+.jr-stop.first, .jr-stop.home { color: #a06d15; }
+.jr-door { font-family: var(--font-scripture); font-size: 0.98rem; color: #7a5a3a; white-space: nowrap; }
+.jr-door::before, .jr-door::after { content: '\2192'; margin: 0 0.3em; font-family: var(--font-ui); font-size: 0.68rem; font-style: normal; color: #b8a080; }
+.jr-ticket-foot { margin: 0.35rem 0 0; font-size: 0.76rem; line-height: 1.4; color: #6b5038; }
+.jr-ticket-foot b { color: #3a2a1e; }
+
+.jr-kept { margin-top: 0.4rem; }
+.jr-slip { position: relative; margin: 1.15rem 0.15rem 0.35rem 0; padding: 0.8rem 0.9rem 0.85rem; border-radius: 2px; background: #fffdf7; color: #2f2118; transform: rotate(var(--r));
+  box-shadow: 0 1px 1px rgba(60, 40, 20, 0.1), 0 7px 16px rgba(80, 50, 20, 0.15); }
+.jr-slip::before { content: ''; position: absolute; top: -0.7rem; left: 50%; width: 5.4rem; height: 1.35rem; margin-left: -2.7rem; transform: rotate(var(--t)); background: var(--tape); opacity: 0.86;
+  clip-path: polygon(2% 10%, 5% 0, 9% 8%, 14% 0, 86% 0, 91% 9%, 95% 0, 98% 10%, 100% 50%, 98% 90%, 95% 100%, 91% 92%, 86% 100%, 14% 100%, 9% 91%, 5% 100%, 2% 90%, 0 50%); }
+.tape-0 { --tape: repeating-linear-gradient(-45deg, rgba(212, 132, 128, 0.85) 0 7px, rgba(232, 170, 162, 0.85) 7px 14px); }
+.tape-1 { --tape: radial-gradient(circle, rgba(255, 255, 255, 0.6) 1.3px, transparent 1.7px) 0 0 / 8px 8px, rgba(132, 170, 138, 0.85); }
+.tape-2 { --tape: repeating-linear-gradient(90deg, rgba(222, 186, 110, 0.88) 0 10px, rgba(238, 208, 142, 0.88) 10px 20px); }
+.tape-3 { --tape: repeating-linear-gradient(45deg, rgba(122, 160, 198, 0.82) 0 4px, rgba(160, 190, 220, 0.82) 4px 10px); }
+.jr-slip figcaption { display: flex; align-items: center; justify-content: space-between; gap: 0.4rem; }
+.jr-slip b { font-family: var(--font-display); font-size: 1.22rem; font-weight: 700; color: #6e4332; }
+.jr-slip .bm-btn { margin: -0.45rem -0.5rem -0.45rem 0; }
+.jr-slip blockquote { margin: 0.25rem 0 0; font-family: var(--font-scripture); font-size: 1.08rem; line-height: 1.42; text-wrap: pretty; }
+.jr-margin { margin: 0.2rem 0 0; font-family: var(--hand); font-size: 1.15rem; line-height: 1.2; color: var(--pencil); }
+.jr-thoughts { margin-top: 0.8rem; }
+/* the ring a cup left on some pages */
+.jr-ring { position: absolute; z-index: 0; top: 38%; right: -1.6rem; width: 7.5rem; height: 7.5rem; border-radius: 50%; pointer-events: none; transform: rotate(var(--r)); opacity: 0.55; mix-blend-mode: multiply; filter: url(#jr-rough);
+  background: radial-gradient(circle, transparent 60%, rgba(150, 100, 45, 0.16) 63%, rgba(150, 100, 45, 0.3) 66%, rgba(150, 100, 45, 0.08) 69%, transparent 71%), radial-gradient(circle at 40% 40%, rgba(160, 110, 50, 0.06), transparent 62%); }
+.jr-doodle { display: block; width: 3.4rem; height: 3.4rem; margin: 1.6rem 0.4rem 0 auto; color: var(--sepia); opacity: 0.3; transform: rotate(var(--r)); filter: url(#jr-rough); }
+
+/* ---------------------------------------------------------------- the bookplate */
+.jr-plate-page { display: grid; justify-items: center; gap: 1.5rem; padding-top: 1rem; text-align: center; }
+.jr-plate { position: relative; width: min(100%, 17rem); padding: 1.2rem 1.1rem 1.1rem; color: #4a2f1a; background: #f1e2c1; transform: rotate(-1.2deg);
+  box-shadow: inset 0 0 0 1px #9c7136, inset 0 0 0 5px #f1e2c1, inset 0 0 0 6px #9c7136, 0 2px 5px rgba(60, 40, 20, 0.2); }
+.jr-plate-orn { color: #8a5a20; }
+.jr-exlibris { margin: 0.15rem 0 0; font-family: var(--font-display); font-size: 1.55rem; font-weight: 600; font-style: italic; letter-spacing: 0.04em; color: #6e4332; }
+.jr-belongs { margin: 0.65rem 0 0; font-size: 0.62rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: #8a6a4a; }
+.jr-owner { margin: 0.2rem 0 0; padding-bottom: 0.25rem; border-bottom: 1px solid rgba(110, 67, 50, 0.4); font-family: var(--hand); font-size: 2.3rem; font-weight: 650; line-height: 1.1; color: var(--pen); overflow-wrap: anywhere; }
+.jr-begun { margin: 0.45rem 0 0; font-family: var(--hand); font-size: 1.25rem; color: var(--sepia); }
+.jr-epigraph { margin: 0; max-width: 20rem; font-family: var(--font-scripture); font-size: 1.12rem; font-style: italic; line-height: 1.45; color: #4a3424; }
+.jr-epigraph cite { display: block; margin-top: 0.35rem; font-family: var(--font-ui); font-size: 0.66rem; font-style: normal; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: #8a6a4a; }
+.jr-tallies { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.2rem; font-family: var(--hand); font-size: 1.45rem; line-height: 1.25; color: var(--sepia); }
+.jr-tallies b { font-weight: 700; color: var(--pen); }
+
+/* ---------------------------------------------------------------- contents and index */
+.jr-contents, .jr-index { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.05rem; }
+.jr-contents button, .jr-index button { all: unset; box-sizing: border-box; cursor: pointer; display: flex; align-items: baseline; gap: 0.35rem; width: 100%; padding: 0.15rem 0.2rem; border-radius: 0.35rem; font-family: var(--hand); font-size: 1.5rem; line-height: 1.3; color: var(--sepia); }
+.jr-contents li.sub button { padding-left: 1.25rem; font-size: 1.35rem; }
+.jr-contents-h { margin-top: 0.5rem; padding: 0 0.2rem; font-family: var(--hand); font-size: 1.5rem; color: var(--sepia); }
+.jr-index button { font-size: 1.35rem; }
+.jr-leader { flex: 1; min-width: 1rem; border-bottom: 2px dotted rgba(108, 74, 44, 0.38); transform: translateY(-0.32em); }
+.jr-pg { font-variant-numeric: tabular-nums; color: var(--pen); }
+.jr-contents button:hover, .jr-index button:hover { background: rgba(108, 74, 44, 0.07); }
+.jr-contents button:focus-visible, .jr-index button:focus-visible { outline: 2px solid var(--focus); }
+
+/* ---------------------------------------------------------------- the well-worn verses */
+.jr-worn { list-style: none; margin: 0; padding: 0; display: grid; gap: 1rem; }
+.jr-worn li { position: relative; display: flex; align-items: flex-start; gap: 0.7rem; }
+.jr-rank { position: relative; flex: none; display: grid; place-items: center; width: 2.2rem; height: 2.1rem; margin-top: 0.1rem; }
+.jr-rank svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.jr-rank path { fill: none; stroke: var(--pen); stroke-width: 1.6; stroke-linecap: round; }
+.jr-rank b { position: relative; font-family: var(--hand); font-size: 1.45rem; font-weight: 700; line-height: 1; color: var(--pen); }
+.jr-worn-main { flex: 1; min-width: 0; }
+.jr-worn-head { display: flex; flex-wrap: wrap; align-items: center; gap: 0.2rem 0.65rem; margin: 0; }
+.jr-worn-ref { all: unset; font-family: var(--font-display); font-size: 1.28rem; font-weight: 700; color: #6e4332; }
+button.jr-worn-ref { cursor: pointer; text-decoration: underline; text-decoration-color: rgba(110, 67, 50, 0.3); text-underline-offset: 3px; }
+button.jr-worn-ref:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.jr-tally { display: inline-flex; align-items: center; gap: 0.25rem; }
+.jr-tally path { fill: none; stroke: var(--pen); stroke-width: 1.7; stroke-linecap: round; }
+.jr-tally b { font-family: var(--hand); font-size: 1.25rem; color: var(--pen); }
+.jr-worn-text { margin: 0.15rem 0 0; font-family: var(--font-scripture); font-size: 0.99rem; line-height: 1.38; color: #4a3424; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+.jr-worn-all { margin: 0.1rem 0 0; font-family: var(--hand); font-size: 1.15rem; color: var(--pencil); }
+.jr-star { position: absolute; top: -0.45rem; right: -0.3rem; width: 1.7rem; height: 1.7rem; transform: rotate(14deg);
+  clip-path: polygon(50% 0, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%); background: linear-gradient(135deg, #fff1b8, #e3b23c 45%, #b5801c 62%, #f5d87a); }
+.jr-star.r2 { background: linear-gradient(135deg, #ffffff, #c9cdd3 45%, #8e959e 62%, #e6e9ed); }
+.jr-star.r3 { background: linear-gradient(135deg, #ffe0c2, #c98a52 45%, #8e5526 62%, #e8b88a); }
+
+/* ---------------------------------------------------------------- the last page */
+.jr-end { display: grid; justify-items: center; gap: 1.2rem; padding-top: 3.5rem; text-align: center; }
+.jr-end-lamp { width: 4.2rem; height: 4.2rem; color: var(--sepia); opacity: 0.45; filter: url(#jr-rough); }
+
+[data-motion='reduced'] .jr-stamp, [data-motion='reduced'] .jr-cover-hint { animation: none; }
+[data-motion='reduced'] .jr-book { transition: none; }

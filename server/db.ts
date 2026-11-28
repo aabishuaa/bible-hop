@@ -212,6 +212,13 @@ CREATE TABLE IF NOT EXISTS badge_awards (
   PRIMARY KEY (journey_id, id)
 );
 CREATE INDEX IF NOT EXISTS badge_awards_player ON badge_awards(player_id, id);
+CREATE TABLE IF NOT EXISTS journal_pages (
+  player_id TEXT NOT NULL,
+  date TEXT NOT NULL,
+  text TEXT NOT NULL,
+  updated_at INTEGER NOT NULL,
+  PRIMARY KEY (player_id, date)
+);
 CREATE TABLE IF NOT EXISTS bookmarks (
   player_id TEXT NOT NULL,
   verse INTEGER NOT NULL,

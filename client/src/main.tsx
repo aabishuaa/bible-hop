@@ -8,6 +8,7 @@ import '@fontsource/poppins/500.css';
 import '@fontsource/poppins/600.css';
 import '@fontsource/poppins/700.css';
 import '@fontsource/unifrakturmaguntia/400.css';
+import '@fontsource-variable/caveat';
 import '@fontsource-variable/fraunces/soft.css';
 import '@fontsource-variable/fraunces/soft-italic.css';
 import './styles/app.css';

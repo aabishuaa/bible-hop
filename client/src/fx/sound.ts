@@ -391,6 +391,11 @@ class SoundEngine {
     this.noise({ at, dur: 0.06, gain: 0.1, type: 'lowpass', freq: 1200 });
   }
 
+  /** A pen across paper: a few quick strokes, for words saved in the Journal. */
+  scribble(): void {
+    for (let i = 0; i < 3; i++) this.noise({ at: i * 0.075, dur: 0.05 + (i % 2) * 0.03, gain: 0.03, freq: 2400 + i * 500, to: 3500 + i * 300, q: 1.6, pan: (i - 1) * 0.15 });
+  }
+
   /** A number counting up. */
   count(): void {
     this.tone({ freq: 1800, dur: 0.015, gain: 0.02 });

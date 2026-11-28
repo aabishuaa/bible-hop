@@ -1,6 +1,6 @@
 // Talking to the game server. The server decides everything; the client only shows it.
 import type {
-  ActionResult, ConcordanceView, FinaleView, HistoryView, JournalView, JourneyView, PlayerView, RevelationView, StandingsView, TodayView,
+  ActionResult, ConcordanceView, FinaleView, HistoryView, JournalPage, JournalView, JourneyView, PlayerView, RevelationView, StandingsView, TodayView,
 } from '../../shared/types.ts';
 import type { GameId, GameState, GamesHub } from '../../shared/minigames.ts';
 
@@ -90,6 +90,7 @@ export const api = {
   logout: () => call<{ ok: true }>('POST', '/api/account/logout', {}),
   deleteAccount: () => call<{ ok: true }>('POST', '/api/account/delete', {}),
   journal: () => call<JournalView>('GET', '/api/journal'),
+  writePage: (date: string, text: string) => call<JournalPage>('PUT', `/api/journal/pages/${date}`, { text }),
   bookmarks: () => call<{ verses: number[] }>('GET', '/api/bookmarks'),
   saveBookmark: (verse: number, note?: string, source?: string) => call<{ verse: number; note: string }>('PUT', '/api/bookmarks', { verse, note, source }),
   removeBookmark: (verse: number) => call<{ ok: true }>('DELETE', `/api/bookmarks/${verse}`),

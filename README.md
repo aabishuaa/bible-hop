@@ -119,8 +119,12 @@ The full rules are in the game under *How to play*.
 
 ### Beyond the daily journey
 
-- **Journal**: tap the ribbon beside any verse to keep it, with a note of your own. The Journal also
-  ranks your go-to verses (the ones you hop to most) and shows where each stands among all players.
+- **Journal**: a leather-bound book that fills itself in as you play. Every day you hop gets a page:
+  the day's journey pasted in like a ticket and rubber-stamped (home, or how it ended), the verses you
+  kept that day taped in with room for a note (tap the ribbon beside any verse to keep it), and ruled
+  lines for your own thoughts, all in your handwriting. It opens with a bookplate and contents and
+  ends with your well-worn verses (tallied, with where each stands among all players) and an index of
+  every kept verse. Turn the pages with a swipe, the arrow keys, the page corners or the tabs.
 - **Daily games**: three quick games, one timed round of each a day, the same for everyone.
   *Book It* (which book is this verse from? every miss sweeps away the wrong side of the shelf),
   *Who Art Thou?* (name the Bible character from five clues, the prize dropping a step with each
@@ -150,7 +154,7 @@ most, today, this week or ever.
 | The Scribe's Desk (Part II) | `server/desk/`, `client/src/desk/` | Roles, two-factor sign-in, versioned rules and lexicon, the audit log. |
 | The game you see | `client/src/` | React, with the page turn drawn in WebGL (`client/src/fx/flip.ts`), sound made in the browser (`fx/sound.ts`) and haptics (`fx/haptics.ts`). |
 | Challenges | `server/game/challenges.ts` | Drawn from the date and the verse, so everyone meets the same one. |
-| The Journal | `server/app/journal.ts`, `client/src/screens/JournalScreen.tsx` | Kept verses, notes, verse counts. |
+| The Journal | `server/app/journal.ts`, `client/src/journal/` | Kept verses and notes, a written page per day, each day's journeys, verse counts; the book, its pages and the page turn. |
 | The daily games | `server/minigames/`, `client/src/minigames/` | Content, timing, scoring and today's spread of results on the server; `lineup()` in `shared/minigames.ts` says which games are in the day's set. |
 | Tests | `tests/` | The directive's 25 acceptance tests, the API, the clock, the Desk, challenges, the Journal and the games (their content is checked against the Bible text). |
 

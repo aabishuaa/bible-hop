@@ -5,7 +5,7 @@ import { AchievementsScreen } from './screens/AchievementsScreen.tsx';
 import { FinaleScreen } from './screens/FinaleScreen.tsx';
 import { HistoryScreen } from './screens/HistoryScreen.tsx';
 import { HowToPlay } from './screens/HowToPlay.tsx';
-import { JournalScreen } from './screens/JournalScreen.tsx';
+import { JournalScreen } from './journal/JournalScreen.tsx';
 import { DailyPlay, GuidePlay } from './screens/Play.tsx';
 import { PracticeScreen } from './screens/PracticeScreen.tsx';
 import { RevelationScreen } from './screens/RevelationScreen.tsx';
